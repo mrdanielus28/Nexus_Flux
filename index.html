@@ -3,9 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Nexus Flux</title>
-    <!-- Font Awesome 6 (free) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>RGB Orbit | Telegram‑style Messenger</title>
+    <!-- Firebase (модульный) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js"
+            }
+        }
+    </script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -24,7 +33,7 @@
             overflow-x: hidden;
         }
 
-        /* ========= RGB АНИМИРОВАННЫЙ ФОН (как в пустом сайте) ========= */
+        /* ========= RGB АНИМИРОВАННЫЙ ФОН ========= */
         .animated-bg {
             position: fixed;
             top: 0;
@@ -37,7 +46,6 @@
             animation: rgbFlow 18s ease infinite;
             filter: brightness(1.1) saturate(1.2);
         }
-
         .overlay-dark {
             position: fixed;
             top: 0;
@@ -49,7 +57,6 @@
             z-index: -1;
             pointer-events: none;
         }
-
         .rgb-orb {
             position: fixed;
             border-radius: 50%;
@@ -80,7 +87,7 @@
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 460px;
+            max-width: 480px;
             margin: 2rem;
             padding: 1rem;
         }
@@ -153,11 +160,6 @@
             background: rgba(50,50,80,0.9);
             border-color: #ff66aa;
             transform: translateY(-2px);
-        }
-        .error-msg {
-            color: #ff8888;
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
         }
         .rgb-dots {
             display: flex;
@@ -237,6 +239,8 @@
             font-weight: bold;
             font-size: 1.2rem;
             color: white;
+            background-size: cover;
+            background-position: center;
         }
         .user-info {
             flex: 1;
@@ -288,7 +292,7 @@
             color: white;
             outline: none;
         }
-        .contacts-list, .channels-list, .groups-list {
+        .contacts-list {
             flex: 1;
             overflow-y: auto;
             padding: 0.5rem;
@@ -317,6 +321,8 @@
             font-size: 1rem;
             color: white;
             position: relative;
+            background-size: cover;
+            background-position: center;
         }
         .contact-status {
             width: 10px;
@@ -338,6 +344,9 @@
         .contact-preview {
             font-size: 0.7rem;
             color: #aaa;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .chat-area {
             flex: 1;
@@ -369,6 +378,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            background-size: cover;
         }
         .chat-info h3 {
             font-size: 1rem;
@@ -397,6 +407,7 @@
             border-radius: 1.2rem;
             color: white;
             word-break: break-word;
+            position: relative;
         }
         .message.own .message-bubble {
             background: linear-gradient(95deg, #3b6eff, #9a3bff);
@@ -407,6 +418,26 @@
             margin-top: 0.2rem;
             display: flex;
             gap: 0.5rem;
+        }
+        .message-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: none;
+            gap: 5px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 12px;
+            padding: 2px 5px;
+        }
+        .message:hover .message-actions {
+            display: flex;
+        }
+        .message-actions button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
         }
         .message-input-area {
             padding: 1rem;
@@ -436,6 +467,36 @@
             color: #aaa;
             padding: 2rem;
         }
+        .edit-profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .edit-profile-content {
+            background: rgba(18,18,35,0.95);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            width: 300px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .edit-profile-content input, .edit-profile-content textarea {
+            width: 100%;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
         @media (max-width: 700px) {
             .chats-sidebar { width: 80px; }
             .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: none; }
@@ -453,12 +514,30 @@
 
     <div id="appRoot"></div>
 
-    <script>
-        // ------------------- DATA -------------------
-        let users = [];           // { username, provider, avatarLetter }
-        let messages = [];        // { id, type, target, sender, text, timestamp }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+        // ========== ВАШ КОНФИГ FIREBASE (ЗАМЕНИТЕ НА СВОЙ) ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1N2kfAHyYbB5-e_FN-6Is00YuaZdIhyo",
+            authDomain: "nexus-flux-22800.firebaseapp.com",
+            projectId: "nexus-flux-22800",
+            storageBucket: "nexus-flux-22800.firebasestorage.app",
+            messagingSenderId: "969830291215",
+            appId: "1:969830291215:web:4e25f8b28ad0b993d9d07a",
+            measurementId: "G-GMTT67V5Z1"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // ========== ДАННЫЕ ПРИЛОЖЕНИЯ ==========
+        let users = [];          // { username, provider, avatarLetter, avatarUrl, bio, displayName }
+        let messages = [];       // { id, type, target, sender, text, timestamp, likes, likedBy, edited }
         let currentUser = null;
-        let currentConversation = null; // { type, id }  type: 'dm' or 'channel', id: username or channel name
+        let currentConversation = null; // { type, id }
+        let activeTab = 'chats'; // chats, channels, groups
 
         const channels = [
             { id: 'general', name: '# general', icon: 'fa-globe' },
@@ -466,47 +545,37 @@
             { id: 'random', name: '# random', icon: 'fa-music' }
         ];
 
-        // Storage keys
+        // Хранилище
         const STORAGE_USERS = 'rgb_messenger_users';
         const STORAGE_MESSAGES = 'rgb_messenger_messages';
         const STORAGE_CURRENT_USER = 'rgb_messenger_currentUser';
 
         function loadData() {
             const storedUsers = localStorage.getItem(STORAGE_USERS);
-            if (storedUsers) {
-                users = JSON.parse(storedUsers);
-            } else {
-                // Predefined users list
+            if (storedUsers) users = JSON.parse(storedUsers);
+            else {
                 users = [
-                    { username: 'Alex_RGB', provider: 'local', avatarLetter: 'A' },
-                    { username: 'Maria_Spark', provider: 'local', avatarLetter: 'M' },
-                    { username: 'PixelMaster', provider: 'local', avatarLetter: 'P' },
-                    { username: 'NeonLight', provider: 'local', avatarLetter: 'N' },
-                    { username: 'Dmitry', provider: 'local', avatarLetter: 'D' },
-                    { username: 'ElenaWave', provider: 'local', avatarLetter: 'E' }
+                    { username: 'Alex_RGB', provider: 'local', avatarLetter: 'A', avatarUrl: null, bio: 'RGB lover', displayName: 'Alex RGB' },
+                    { username: 'Maria_Spark', provider: 'local', avatarLetter: 'M', avatarUrl: null, bio: 'Sparkling', displayName: 'Maria' },
+                    { username: 'PixelMaster', provider: 'local', avatarLetter: 'P', avatarUrl: null, bio: 'Pixel artist', displayName: 'PixelMaster' },
+                    { username: 'NeonLight', provider: 'local', avatarLetter: 'N', avatarUrl: null, bio: 'Neon vibes', displayName: 'NeonLight' }
                 ];
                 saveUsers();
             }
-
             const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
-            if (storedMessages) {
-                messages = JSON.parse(storedMessages);
-            } else {
-                // Demo messages
+            if (storedMessages) messages = JSON.parse(storedMessages);
+            else {
                 messages = [
-                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Telegram‑style community.', timestamp: new Date(Date.now()-7200000).toISOString() },
-                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL animations?', timestamp: new Date(Date.now()-3600000).toISOString() },
-                    { id: Date.now()+3, type: 'dm', target: 'Maria_Spark', sender: 'Alex_RGB', text: 'Hey Maria! How are you?', timestamp: new Date(Date.now()-1800000).toISOString() },
-                    { id: Date.now()+4, type: 'dm', target: 'Alex_RGB', sender: 'Maria_Spark', text: 'Hi Alex! I\'m great, enjoying the RGB vibes.', timestamp: new Date(Date.now()-1500000).toISOString() }
+                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Real Google login + Telegram‑style chat.', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false },
+                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false },
+                    { id: Date.now()+3, type: 'dm', target: 'Maria_Spark', sender: 'Alex_RGB', text: 'Hey Maria! Check out the new social login.', timestamp: new Date(Date.now()-1800000).toISOString(), likes: 0, likedBy: [], edited: false }
                 ];
                 saveMessages();
             }
-
             const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
             if (savedUser) currentUser = JSON.parse(savedUser);
             else currentUser = null;
         }
-
         function saveUsers() { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
         function saveMessages() { localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages)); }
         function saveCurrentUser() {
@@ -518,26 +587,62 @@
             return !users.some(u => u.username.toLowerCase() === username.toLowerCase());
         }
 
-        // Social login simulation: choose username, create user
-        function socialLogin(provider) {
-            let suggested = provider + '_' + Math.floor(Math.random() * 1000);
-            let finalUsername = prompt(`✨ ${provider} login\nChoose a unique username:`, suggested);
-            if (!finalUsername) return;
-            finalUsername = finalUsername.trim();
-            if (!isUsernameUnique(finalUsername)) {
-                alert('Username already taken. Try another.');
-                return;
+        function createUser(username, provider, displayName = null, avatarUrl = null) {
+            if (!username || username.trim() === '') return false;
+            username = username.trim();
+            if (!isUsernameUnique(username)) {
+                alert(`Username "${username}" already taken. Choose another.`);
+                return false;
             }
             const newUser = {
-                username: finalUsername,
-                provider: provider,
-                avatarLetter: finalUsername.charAt(0).toUpperCase()
+                username,
+                provider,
+                avatarLetter: username.charAt(0).toUpperCase(),
+                avatarUrl: avatarUrl || null,
+                bio: '',
+                displayName: displayName || username
             };
             users.push(newUser);
             saveUsers();
             currentUser = newUser;
             saveCurrentUser();
             renderApp();
+            return true;
+        }
+
+        // Google Login
+        async function firebaseGoogleLogin() {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                let username = user.displayName?.replace(/\s/g, '_') || user.email.split('@')[0];
+                let finalName = username;
+                let counter = 0;
+                while (!isUsernameUnique(finalName) && counter < 10) {
+                    finalName = username + '_' + Math.floor(Math.random() * 1000);
+                    counter++;
+                }
+                createUser(finalName, 'Google', user.displayName, user.photoURL);
+            } catch (error) {
+                alert('Google login failed: ' + error.message);
+            }
+        }
+
+        // Demo social logins (Discord, GitHub, Telegram)
+        function discordLogin() {
+            let suggested = 'Discord_' + Math.floor(Math.random() * 1000);
+            let username = prompt('✨ Discord demo login\nEnter unique username:', suggested);
+            if (username) createUser(username, 'Discord');
+        }
+        function githubLogin() {
+            let suggested = 'GitHub_' + Math.floor(Math.random() * 1000);
+            let username = prompt('✨ GitHub demo login\nEnter unique username:', suggested);
+            if (username) createUser(username, 'GitHub');
+        }
+        function telegramLogin() {
+            let suggested = 'Telegram_' + Math.floor(Math.random() * 1000);
+            let username = prompt('✨ Telegram demo login\nEnter unique username:', suggested);
+            if (username) createUser(username, 'Telegram');
         }
 
         function logout() {
@@ -546,6 +651,7 @@
             renderApp();
         }
 
+        // Сообщения
         function sendMessage(text) {
             if (!text.trim() || !currentConversation) return;
             const newMsg = {
@@ -554,13 +660,50 @@
                 target: currentConversation.id,
                 sender: currentUser.username,
                 text: text.trim(),
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                likes: 0,
+                likedBy: [],
+                edited: false
             };
             messages.push(newMsg);
             saveMessages();
             renderCurrentChat();
-            // Update contact list previews (by re-rendering sidebar)
             renderSidebar();
+        }
+
+        function deleteMessage(msgId) {
+            const index = messages.findIndex(m => m.id === msgId);
+            if (index !== -1 && messages[index].sender === currentUser.username) {
+                messages.splice(index, 1);
+                saveMessages();
+                renderCurrentChat();
+                renderSidebar();
+            }
+        }
+
+        function editMessage(msgId, newText) {
+            const msg = messages.find(m => m.id === msgId);
+            if (msg && msg.sender === currentUser.username && newText.trim()) {
+                msg.text = newText.trim();
+                msg.edited = true;
+                saveMessages();
+                renderCurrentChat();
+            }
+        }
+
+        function toggleLike(msgId) {
+            const msg = messages.find(m => m.id === msgId);
+            if (!msg) return;
+            const userId = currentUser.username;
+            if (msg.likedBy.includes(userId)) {
+                msg.likedBy = msg.likedBy.filter(u => u !== userId);
+                msg.likes--;
+            } else {
+                msg.likedBy.push(userId);
+                msg.likes++;
+            }
+            saveMessages();
+            renderCurrentChat();
         }
 
         function getMessagesForConversation(type, target) {
@@ -575,27 +718,29 @@
                 chatArea.innerHTML = '<div class="empty-messages">✨ Select a chat to start messaging</div>';
                 return;
             }
-
             const msgs = getMessagesForConversation(currentConversation.type, currentConversation.id);
             let messagesHtml = '';
-            if (msgs.length === 0) {
-                messagesHtml = '<div class="empty-messages">💬 No messages yet. Be the first!</div>';
-            } else {
+            if (msgs.length === 0) messagesHtml = '<div class="empty-messages">💬 No messages yet. Be the first!</div>';
+            else {
                 msgs.forEach(msg => {
                     const isOwn = msg.sender === currentUser.username;
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    const likedClass = msg.likedBy.includes(currentUser.username) ? 'liked' : '';
                     messagesHtml += `
-                        <div class="message ${isOwn ? 'own' : ''}">
-                            <div class="message-bubble">${escapeHtml(msg.text)}</div>
-                            <div class="message-meta">
-                                <span>${escapeHtml(msg.sender)}</span>
-                                <span>${time}</span>
+                        <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
+                            <div class="message-bubble">
+                                ${escapeHtml(msg.text)}${msg.edited ? ' <i style="font-size:0.7rem;">(edited)</i>' : ''}
+                                <div class="message-actions">
+                                    ${isOwn ? `<button class="edit-msg" data-id="${msg.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                    ${isOwn ? `<button class="delete-msg" data-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
+                                    <button class="like-msg" data-id="${msg.id}"><i class="fas fa-heart ${likedClass}"></i> ${msg.likes}</button>
+                                </div>
                             </div>
+                            <div class="message-meta"><span>${escapeHtml(msg.sender)}</span><span>${time}</span></div>
                         </div>
                     `;
                 });
             }
-
             let headerTitle = '';
             if (currentConversation.type === 'channel') {
                 const ch = channels.find(c => c.id === currentConversation.id);
@@ -603,22 +748,18 @@
             } else {
                 headerTitle = '@' + currentConversation.id;
             }
-
             chatArea.innerHTML = `
                 <div class="chat-header">
                     <button class="back-button" id="backBtn"><i class="fas fa-arrow-left"></i></button>
                     <div class="chat-avatar">${currentConversation.type === 'channel' ? '#' : currentConversation.id.charAt(0).toUpperCase()}</div>
                     <div class="chat-info"><h3>${escapeHtml(headerTitle)}</h3></div>
                 </div>
-                <div class="messages-container" id="messagesContainer">
-                    ${messagesHtml}
-                </div>
+                <div class="messages-container" id="messagesContainer">${messagesHtml}</div>
                 <div class="message-input-area">
                     <input type="text" id="messageInput" class="message-input" placeholder="Type a message...">
                     <button id="sendMsgBtn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             `;
-
             const input = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendMsgBtn');
             const backBtn = document.getElementById('backBtn');
@@ -627,145 +768,153 @@
                 sendBtn.onclick = send;
                 input.onkeypress = (e) => { if(e.key === 'Enter') send(); };
             }
-            if (backBtn) {
-                backBtn.onclick = () => {
-                    currentConversation = null;
-                    renderCurrentChat();
-                    renderSidebar();
-                    // On mobile, we could show sidebar again – but we just rerender.
-                };
-            }
+            if (backBtn) backBtn.onclick = () => { currentConversation = null; renderCurrentChat(); renderSidebar(); };
             const container = document.getElementById('messagesContainer');
             if (container) container.scrollTop = container.scrollHeight;
+
+            // Делегирование событий на кнопки в сообщениях
+            container?.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-msg');
+                const editBtn = e.target.closest('.edit-msg');
+                const likeBtn = e.target.closest('.like-msg');
+                if (deleteBtn) {
+                    const id = parseInt(deleteBtn.getAttribute('data-id'));
+                    if (id) deleteMessage(id);
+                }
+                if (editBtn) {
+                    const id = parseInt(editBtn.getAttribute('data-id'));
+                    if (id) {
+                        const newText = prompt('Edit message:', messages.find(m => m.id === id)?.text);
+                        if (newText) editMessage(id, newText);
+                    }
+                }
+                if (likeBtn) {
+                    const id = parseInt(likeBtn.getAttribute('data-id'));
+                    if (id) toggleLike(id);
+                }
+            });
         }
 
         function renderSidebar() {
             const sidebar = document.getElementById('sidebarDynamic');
             if (!sidebar) return;
-
-            // Get active tab (chats/channels/groups)
-            let activeTab = 'chats';
-            const activeTabEl = document.querySelector('.sidebar-tab.active');
-            if (activeTabEl) activeTab = activeTabEl.getAttribute('data-tab');
-
-            // Build contacts list (all users except current)
             const otherUsers = users.filter(u => u.username !== currentUser.username);
             let contactsHtml = '';
-            otherUsers.forEach(u => {
-                // last message preview
-                const lastMsg = messages.filter(m => (m.type === 'dm' && (m.target === u.username || (m.sender === u.username && m.target === currentUser.username))))
-                    .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-                const preview = lastMsg ? (lastMsg.sender === currentUser.username ? 'You: ' : '') + lastMsg.text.substring(0,30) : 'New conversation';
-                const activeClass = (currentConversation && currentConversation.type === 'dm' && currentConversation.id === u.username) ? 'active' : '';
-                contactsHtml += `
-                    <div class="contact-item ${activeClass}" data-type="dm" data-id="${u.username}">
-                        <div class="contact-avatar">
-                            ${u.avatarLetter}
-                            <div class="contact-status" style="background: ${Math.random() > 0.5 ? '#2ecc71' : '#aaa'}"></div>
+            if (activeTab === 'chats') {
+                otherUsers.forEach(u => {
+                    const lastMsg = messages.filter(m => (m.type === 'dm' && (m.target === u.username || (m.sender === u.username && m.target === currentUser.username))))
+                        .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                    const preview = lastMsg ? (lastMsg.sender === currentUser.username ? 'You: ' : '') + lastMsg.text.substring(0,30) : 'New conversation';
+                    const activeClass = (currentConversation && currentConversation.type === 'dm' && currentConversation.id === u.username) ? 'active' : '';
+                    contactsHtml += `
+                        <div class="contact-item ${activeClass}" data-type="dm" data-id="${u.username}">
+                            <div class="contact-avatar" style="background-image: url('${u.avatarUrl || ''}'); background-size: cover;">${!u.avatarUrl ? u.avatarLetter : ''}</div>
+                            <div class="contact-info">
+                                <div class="contact-name">${escapeHtml(u.displayName || u.username)}</div>
+                                <div class="contact-preview">${escapeHtml(preview)}</div>
+                            </div>
                         </div>
-                        <div class="contact-info">
-                            <div class="contact-name">${escapeHtml(u.username)}</div>
-                            <div class="contact-preview">${escapeHtml(preview)}</div>
+                    `;
+                });
+            } else if (activeTab === 'channels') {
+                channels.forEach(ch => {
+                    const lastMsg = messages.filter(m => m.type === 'channel' && m.target === ch.id).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                    const preview = lastMsg ? lastMsg.text.substring(0,30) : 'No messages yet';
+                    const activeClass = (currentConversation && currentConversation.type === 'channel' && currentConversation.id === ch.id) ? 'active' : '';
+                    contactsHtml += `
+                        <div class="contact-item ${activeClass}" data-type="channel" data-id="${ch.id}">
+                            <div class="contact-avatar" style="background:#3b6eff;">#</div>
+                            <div class="contact-info">
+                                <div class="contact-name">${ch.name}</div>
+                                <div class="contact-preview">${escapeHtml(preview)}</div>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
-
-            // Channels list
-            let channelsHtml = '';
-            channels.forEach(ch => {
-                const lastMsg = messages.filter(m => m.type === 'channel' && m.target === ch.id)
-                    .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-                const preview = lastMsg ? lastMsg.text.substring(0,30) : 'No messages yet';
-                const activeClass = (currentConversation && currentConversation.type === 'channel' && currentConversation.id === ch.id) ? 'active' : '';
-                channelsHtml += `
-                    <div class="contact-item ${activeClass}" data-type="channel" data-id="${ch.id}">
-                        <div class="contact-avatar" style="background:#3b6eff;">#</div>
-                        <div class="contact-info">
-                            <div class="contact-name">${ch.name}</div>
-                            <div class="contact-preview">${escapeHtml(preview)}</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            // Groups (empty for demo)
-            const groupsHtml = `<div class="empty-messages" style="text-align:center; padding:1rem;">👥 Groups coming soon</div>`;
-
-            let listHtml = '';
-            if (activeTab === 'chats') listHtml = contactsHtml;
-            else if (activeTab === 'channels') listHtml = channelsHtml;
-            else listHtml = groupsHtml;
+                    `;
+                });
+            } else {
+                contactsHtml = `<div class="empty-messages" style="text-align:center; padding:1rem;">👥 Groups coming soon</div>`;
+            }
 
             sidebar.innerHTML = `
                 <div class="user-header">
-                    <div class="avatar">${currentUser.avatarLetter}</div>
+                    <div class="avatar" style="background-image: url('${currentUser.avatarUrl || ''}'); background-size: cover;">${!currentUser.avatarUrl ? currentUser.avatarLetter : ''}</div>
                     <div class="user-info">
                         <div class="username">@${currentUser.username}</div>
                     </div>
                     <button id="logoutSidebarBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+                    <button id="editProfileBtn" class="logout-btn" style="margin-left:5px;"><i class="fas fa-user-edit"></i></button>
                 </div>
                 <div class="sidebar-tabs">
                     <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" data-tab="chats"><i class="fas fa-comment"></i><span> Chats</span></button>
                     <button class="sidebar-tab ${activeTab === 'channels' ? 'active' : ''}" data-tab="channels"><i class="fas fa-bullhorn"></i><span> Channels</span></button>
                     <button class="sidebar-tab ${activeTab === 'groups' ? 'active' : ''}" data-tab="groups"><i class="fas fa-users"></i><span> Groups</span></button>
                 </div>
-                <div class="search-box">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search...">
-                </div>
-                <div class="contacts-list" id="contactsList">
-                    ${listHtml}
-                </div>
+                <div class="search-box"><input type="text" class="search-input" id="searchInput" placeholder="Search..."></div>
+                <div class="contacts-list" id="contactsList">${contactsHtml}</div>
             `;
 
-            // Attach tab switching
             document.querySelectorAll('.sidebar-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    const tabId = tab.getAttribute('data-tab');
-                    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    renderSidebar(); // re-render with new active tab
+                tab.addEventListener('click', () => {
+                    activeTab = tab.getAttribute('data-tab');
+                    renderSidebar();
                 });
             });
-
-            // Attach click events on contacts/channels
             document.querySelectorAll('.contact-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const type = el.getAttribute('data-type');
                     const id = el.getAttribute('data-id');
-                    if (type && id) {
-                        currentConversation = { type, id };
-                        renderCurrentChat();
-                        renderSidebar(); // update active highlight
-                    }
+                    if (type && id) { currentConversation = { type, id }; renderCurrentChat(); renderSidebar(); }
                 });
             });
-
-            // Search functionality (filter contacts/channels)
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
-                    const items = document.querySelectorAll('.contact-item');
-                    items.forEach(item => {
+                    document.querySelectorAll('.contact-item').forEach(item => {
                         const name = item.querySelector('.contact-name')?.innerText.toLowerCase() || '';
-                        if (name.includes(term)) item.style.display = 'flex';
-                        else item.style.display = 'none';
+                        item.style.display = name.includes(term) ? 'flex' : 'none';
                     });
                 });
             }
-
             const logoutBtn = document.getElementById('logoutSidebarBtn');
-            if (logoutBtn) logoutBtn.onclick = () => logout();
+            if (logoutBtn) logoutBtn.onclick = () => { currentUser = null; saveCurrentUser(); renderApp(); };
+            const editBtn = document.getElementById('editProfileBtn');
+            if (editBtn) editBtn.onclick = () => showEditProfileModal();
+        }
+
+        function showEditProfileModal() {
+            const modal = document.createElement('div');
+            modal.className = 'edit-profile-modal';
+            modal.innerHTML = `
+                <div class="edit-profile-content">
+                    <h3>Edit Profile</h3>
+                    <input type="text" id="editDisplayName" placeholder="Display name" value="${escapeHtml(currentUser.displayName || '')}">
+                    <textarea id="editBio" placeholder="Bio" rows="2">${escapeHtml(currentUser.bio || '')}</textarea>
+                    <input type="text" id="editAvatarUrl" placeholder="Avatar URL (optional)" value="${currentUser.avatarUrl || ''}">
+                    <button id="saveProfileEdit" class="social-btn" style="margin-top:10px;">Save</button>
+                    <button id="closeModal" class="social-btn" style="margin-top:5px;">Cancel</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('saveProfileEdit')?.addEventListener('click', () => {
+                currentUser.displayName = document.getElementById('editDisplayName').value;
+                currentUser.bio = document.getElementById('editBio').value;
+                currentUser.avatarUrl = document.getElementById('editAvatarUrl').value;
+                if (!currentUser.avatarUrl) currentUser.avatarUrl = null;
+                saveCurrentUser();
+                // обновить пользователя в массиве users
+                const idx = users.findIndex(u => u.username === currentUser.username);
+                if (idx !== -1) users[idx] = currentUser;
+                saveUsers();
+                modal.remove();
+                renderSidebar();
+                renderCurrentChat();
+            });
+            document.getElementById('closeModal')?.addEventListener('click', () => modal.remove());
         }
 
         function renderMessenger() {
-            return `
-                <div class="messenger-container">
-                    <div class="chats-sidebar" id="sidebarDynamic"></div>
-                    <div class="chat-area" id="chatAreaDynamic"></div>
-                </div>
-            `;
+            return `<div class="messenger-container"><div class="chats-sidebar" id="sidebarDynamic"></div><div class="chat-area" id="chatAreaDynamic"></div></div>`;
         }
 
         function renderRegistration() {
@@ -775,18 +924,16 @@
                         <div class="glass-card">
                             <div class="symbolic-icon">✦</div>
                             <h1>RGB Orbit</h1>
-                            <div class="sub">Telegram‑style • channels • DMs</div>
+                            <div class="sub">Telegram‑style • Firebase Google Login</div>
                             <div class="gradient-divider"></div>
                             <div class="social-buttons">
-                                <div id="googleLogin" class="social-btn"><i class="fab fa-google"></i> Google</div>
+                                <div id="googleLoginBtn" class="social-btn"><i class="fab fa-google"></i> Google</div>
                                 <div id="discordLogin" class="social-btn"><i class="fab fa-discord"></i> Discord</div>
                                 <div id="telegramLogin" class="social-btn"><i class="fab fa-telegram"></i> Telegram</div>
                                 <div id="githubLogin" class="social-btn"><i class="fab fa-github"></i> GitHub</div>
                             </div>
-                            <div class="rgb-dots">
-                                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                            </div>
-                            <div style="font-size:0.7rem; opacity:0.7; margin-top:1rem;">✨ unique usernames • animated RGB • live chat</div>
+                            <div class="rgb-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                            <div style="font-size:0.7rem; opacity:0.7; margin-top:1rem;">✨ Google (real) • Others demo ✨</div>
                         </div>
                     </div>
                 </div>
@@ -797,43 +944,26 @@
             const appDiv = document.getElementById('appRoot');
             if (!currentUser) {
                 appDiv.innerHTML = renderRegistration();
-                attachRegistrationEvents();
+                document.getElementById('googleLoginBtn')?.addEventListener('click', firebaseGoogleLogin);
+                document.getElementById('discordLogin')?.addEventListener('click', discordLogin);
+                document.getElementById('telegramLogin')?.addEventListener('click', telegramLogin);
+                document.getElementById('githubLogin')?.addEventListener('click', githubLogin);
             } else {
                 appDiv.innerHTML = renderMessenger();
                 renderSidebar();
                 if (!currentConversation) {
-                    // default to first channel
                     currentConversation = { type: 'channel', id: 'general' };
                     renderCurrentChat();
                     renderSidebar();
-                } else {
-                    renderCurrentChat();
-                }
+                } else renderCurrentChat();
             }
-        }
-
-        function attachRegistrationEvents() {
-            const google = document.getElementById('googleLogin');
-            const discord = document.getElementById('discordLogin');
-            const telegram = document.getElementById('telegramLogin');
-            const github = document.getElementById('githubLogin');
-            if (google) google.onclick = () => socialLogin('Google');
-            if (discord) discord.onclick = () => socialLogin('Discord');
-            if (telegram) telegram.onclick = () => socialLogin('Telegram');
-            if (github) github.onclick = () => socialLogin('GitHub');
         }
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+            return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
         }
 
-        // Init
         loadData();
         renderApp();
     </script>
