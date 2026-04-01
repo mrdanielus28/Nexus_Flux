@@ -533,11 +533,11 @@
         const googleProvider = new GoogleAuthProvider();
 
         // ========== ДАННЫЕ ПРИЛОЖЕНИЯ ==========
-        let users = [];          // { username, provider, avatarLetter, avatarUrl, bio, displayName }
-        let messages = [];       // { id, type, target, sender, text, timestamp, likes, likedBy, edited }
+        let users = [];
+        let messages = [];
         let currentUser = null;
-        let currentConversation = null; // { type, id }
-        let activeTab = 'chats'; // chats, channels, groups
+        let currentConversation = null;
+        let activeTab = 'chats';
 
         const channels = [
             { id: 'general', name: '# general', icon: 'fa-globe' },
@@ -545,12 +545,12 @@
             { id: 'random', name: '# random', icon: 'fa-music' }
         ];
 
-        // Хранилище
         const STORAGE_USERS = 'rgb_messenger_users';
         const STORAGE_MESSAGES = 'rgb_messenger_messages';
         const STORAGE_CURRENT_USER = 'rgb_messenger_currentUser';
 
         function loadData() {
+            // Загрузка пользователей
             const storedUsers = localStorage.getItem(STORAGE_USERS);
             if (storedUsers) users = JSON.parse(storedUsers);
             else {
@@ -562,9 +562,19 @@
                 ];
                 saveUsers();
             }
+
+            // Загрузка сообщений с миграцией
             const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
-            if (storedMessages) messages = JSON.parse(storedMessages);
-            else {
+            if (storedMessages) {
+                messages = JSON.parse(storedMessages);
+                // МИГРАЦИЯ: добавляем недостающие поля
+                messages.forEach(msg => {
+                    if (msg.likedBy === undefined) msg.likedBy = [];
+                    if (msg.likes === undefined) msg.likes = 0;
+                    if (msg.edited === undefined) msg.edited = false;
+                });
+                saveMessages();
+            } else {
                 messages = [
                     { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Real Google login + Telegram‑style chat.', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false },
                     { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false },
@@ -572,10 +582,13 @@
                 ];
                 saveMessages();
             }
+
+            // Загрузка текущего пользователя
             const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
             if (savedUser) currentUser = JSON.parse(savedUser);
             else currentUser = null;
         }
+
         function saveUsers() { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
         function saveMessages() { localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages)); }
         function saveCurrentUser() {
@@ -588,7 +601,7 @@
         }
 
         function createUser(username, provider, displayName = null, avatarUrl = null) {
-            if (!username || username.trim() === '') return false;
+            if (!username || typeof username !== 'string' || username.trim() === '') return false;
             username = username.trim();
             if (!isUsernameUnique(username)) {
                 alert(`Username "${username}" already taken. Choose another.`);
@@ -615,7 +628,7 @@
             try {
                 const result = await signInWithPopup(auth, googleProvider);
                 const user = result.user;
-                let username = user.displayName?.replace(/\s/g, '_') || user.email.split('@')[0];
+                let username = (user.displayName?.replace(/\s/g, '_') || user.email?.split('@')[0] || 'google_user');
                 let finalName = username;
                 let counter = 0;
                 while (!isUsernameUnique(finalName) && counter < 10) {
@@ -624,6 +637,7 @@
                 }
                 createUser(finalName, 'Google', user.displayName, user.photoURL);
             } catch (error) {
+                console.error(error);
                 alert('Google login failed: ' + error.message);
             }
         }
@@ -694,6 +708,7 @@
         function toggleLike(msgId) {
             const msg = messages.find(m => m.id === msgId);
             if (!msg) return;
+            if (!msg.likedBy) msg.likedBy = []; // защита
             const userId = currentUser.username;
             if (msg.likedBy.includes(userId)) {
                 msg.likedBy = msg.likedBy.filter(u => u !== userId);
@@ -725,7 +740,7 @@
                 msgs.forEach(msg => {
                     const isOwn = msg.sender === currentUser.username;
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    const likedClass = msg.likedBy.includes(currentUser.username) ? 'liked' : '';
+                    const likedClass = (msg.likedBy && msg.likedBy.includes(currentUser.username)) ? 'liked' : '';
                     messagesHtml += `
                         <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
                             <div class="message-bubble">
@@ -733,7 +748,7 @@
                                 <div class="message-actions">
                                     ${isOwn ? `<button class="edit-msg" data-id="${msg.id}"><i class="fas fa-edit"></i></button>` : ''}
                                     ${isOwn ? `<button class="delete-msg" data-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
-                                    <button class="like-msg" data-id="${msg.id}"><i class="fas fa-heart ${likedClass}"></i> ${msg.likes}</button>
+                                    <button class="like-msg" data-id="${msg.id}"><i class="fas fa-heart ${likedClass}"></i> ${msg.likes || 0}</button>
                                 </div>
                             </div>
                             <div class="message-meta"><span>${escapeHtml(msg.sender)}</span><span>${time}</span></div>
@@ -902,7 +917,6 @@
                 currentUser.avatarUrl = document.getElementById('editAvatarUrl').value;
                 if (!currentUser.avatarUrl) currentUser.avatarUrl = null;
                 saveCurrentUser();
-                // обновить пользователя в массиве users
                 const idx = users.findIndex(u => u.username === currentUser.username);
                 if (idx !== -1) users[idx] = currentUser;
                 saveUsers();
