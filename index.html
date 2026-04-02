@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>RGB Orbit | Мессенджер нового поколения</title>
+    <title> Nexus_Flux | Мессенджер нового поколения </title>
     <script type="importmap">
         {
             "imports": {
@@ -799,9 +799,9 @@
             if (storedUsers) users = JSON.parse(storedUsers);
             else {
                 users = [
-                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
-                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
-                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false }
+                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
+                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
+                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false }
                 ];
                 saveUsers();
             }
@@ -816,8 +816,8 @@
                 saveMessages();
             } else {
                 messages = [
-                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false, reactions: {} },
-                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false, reactions: {} }
+                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Info', text: 'Welcome to Nexus_Flux!', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false, reactions: {} },
+                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'Info', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false, reactions: {} }
                 ];
                 saveMessages();
             }
@@ -1343,7 +1343,7 @@
                     ` : ''}
                     <div class="settings-section">
                         <div class="settings-section-title">About</div>
-                        <div class="settings-item-info"><p>RGB Orbit v2.0 | Telegram‑style messenger</p></div>
+                        <div class="settings-item-info"><p> Nexus_Flux v2.0 | Telegram‑style messenger</p></div>
                     </div>
                 </div>
             `;
@@ -1404,7 +1404,7 @@
                     <div class="rgb-border-wrap">
                         <div class="glass-card">
                             <div class="symbolic-icon">✦</div>
-                            <h1>RGB Orbit</h1>
+                            <h1>Nexus_Flux</h1>
                             <div class="sub">${isLogin ? 'Sign in to continue' : 'Create new account'}</div>
                             <div class="gradient-divider"></div>
                             <div class="form-group">
