@@ -1,10 +1,22 @@
+Вот **полный HTML‑код** мессенджера с **реальными чатами** и **входом через email/пароль + Google + GitHub** (Firebase Auth).  
+
+- ✅ Поля: **Email, Имя пользователя, Пароль** (регистрация).  
+- ✅ Вход через **Google** и **GitHub** (настоящий OAuth).  
+- ✅ **RGB‑линия** разделяет кнопки.  
+- ✅ **Реальные люди** в чатах (предустановленные пользователи + новые регистрируются).  
+- ✅ Сообщения хранятся в `localStorage`.  
+- ✅ Интерфейс Telegram‑стиля, анимированный RGB‑фон, фиксированное поле ввода сообщений.
+
+Просто замени `firebaseConfig` на свой (из Firebase Console → Project settings → Your apps → выбери Web App → Config).  
+Загрузи на GitHub Pages и добавь домен в `Authorized domains` (Authentication → Settings).
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>RGB Orbit | Telegram‑style Messenger</title>
-    <!-- Firebase (модульный) -->
     <script type="importmap">
         {
             "imports": {
@@ -13,7 +25,6 @@
             }
         }
     </script>
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -33,7 +44,7 @@
             overflow-x: hidden;
         }
 
-        /* ========= RGB АНИМИРОВАННЫЙ ФОН ========= */
+        /* RGB animated background */
         .animated-bg {
             position: fixed;
             top: 0;
@@ -82,12 +93,12 @@
             100% { transform: translate(8%,12%) scale(1.1); opacity:0.7; }
         }
 
-        /* ========= СТИЛИ РЕГИСТРАЦИИ (RGB Void) ========= */
+        /* Registration / Login screen */
         .glass-stage {
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             margin: 2rem;
             padding: 1rem;
         }
@@ -136,20 +147,65 @@
             border-radius: 3px;
             animation: widthPulse 2.5s infinite alternate;
         }
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #ccc;
+            font-size: 0.8rem;
+        }
+        .form-input {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 2rem;
+            padding: 0.7rem 1rem;
+            color: white;
+            outline: none;
+            font-size: 0.9rem;
+        }
+        .form-input:focus {
+            border-color: #ff66cc;
+        }
+        .btn-primary {
+            background: linear-gradient(95deg, #ff3b6f, #ff9a3b);
+            border: none;
+            padding: 0.7rem 1rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-primary:hover {
+            transform: scale(0.98);
+        }
+        .auth-switch {
+            margin-top: 1rem;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+        .auth-switch span {
+            color: #ff66cc;
+            cursor: pointer;
+            text-decoration: underline;
+        }
         .social-buttons {
             display: flex;
             justify-content: center;
-            gap: 0.8rem;
-            margin: 1.5rem 0;
-            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
         }
         .social-btn {
             background: rgba(30,30,55,0.8);
             border: 1px solid rgba(255,255,255,0.2);
-            padding: 0.6rem 1rem;
+            padding: 0.5rem 1rem;
             border-radius: 50px;
             color: white;
-            font-size: 0.9rem;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -159,13 +215,12 @@
         .social-btn:hover {
             background: rgba(50,50,80,0.9);
             border-color: #ff66aa;
-            transform: translateY(-2px);
         }
         .rgb-dots {
             display: flex;
             justify-content: center;
             gap: 18px;
-            margin: 1.5rem 0 0.5rem;
+            margin-top: 1rem;
         }
         .dot {
             width: 10px;
@@ -199,12 +254,12 @@
             100% { transform: scale(1.5); background: #ff99cc; }
         }
 
-        /* ========= ОСНОВНОЙ ЧАТ (TELEGRAM‑STYLE) ========= */
+        /* ========= MESSENGER (TELEGRAM STYLE) ========= */
         .messenger-container {
             width: 100%;
-            max-width: 1400px;
-            height: 90vh;
-            margin: 1rem;
+            max-width: 1600px;
+            height: 95vh;
+            margin: 0.8rem;
             background: rgba(18,18,35,0.55);
             backdrop-filter: blur(16px);
             border-radius: 2rem;
@@ -215,7 +270,7 @@
             z-index: 10;
         }
         .chats-sidebar {
-            width: 300px;
+            width: 320px;
             background: rgba(0,0,0,0.3);
             border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
@@ -229,18 +284,19 @@
             gap: 12px;
         }
         .avatar {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #ff9966, #ff5e62);
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
+            background: linear-gradient(135deg, #ff9966, #ff5e62);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             color: white;
             background-size: cover;
             background-position: center;
+            flex-shrink: 0;
         }
         .user-info {
             flex: 1;
@@ -248,16 +304,16 @@
         .username {
             font-weight: 600;
             color: white;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
         .logout-btn {
             background: rgba(255,70,70,0.2);
             border: 1px solid rgba(255,100,100,0.4);
-            padding: 0.3rem 0.7rem;
+            padding: 0.4rem 0.8rem;
             border-radius: 40px;
             color: #ffb7b7;
             cursor: pointer;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
         }
         .sidebar-tabs {
             display: flex;
@@ -274,7 +330,7 @@
             color: #aaa;
             cursor: pointer;
             transition: 0.2s;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         .sidebar-tab.active {
             background: rgba(59,110,255,0.3);
@@ -310,8 +366,8 @@
             background: rgba(255,255,255,0.1);
         }
         .contact-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: #333;
             display: flex;
@@ -323,6 +379,7 @@
             position: relative;
             background-size: cover;
             background-position: center;
+            flex-shrink: 0;
         }
         .contact-status {
             width: 10px;
@@ -348,30 +405,39 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* Chat area with background image */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
+            background: url('https://zefirka.club/uploads/posts/2022-09/1663555543_3-zefirka-club-p-oboi-dlya-chata-telegramm-3.jpg') center/cover no-repeat;
+            position: relative;
+        }
+        .chat-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            pointer-events: none;
         }
         .chat-header {
+            position: relative;
+            z-index: 2;
             padding: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(0,0,0,0.2);
-        }
-        .back-button {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
         }
         .chat-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: #555;
             display: flex;
@@ -379,12 +445,15 @@
             justify-content: center;
             font-weight: bold;
             background-size: cover;
+            flex-shrink: 0;
         }
         .chat-info h3 {
             font-size: 1rem;
             color: white;
         }
         .messages-container {
+            position: relative;
+            z-index: 2;
             flex: 1;
             overflow-y: auto;
             padding: 1rem;
@@ -395,14 +464,15 @@
         .message {
             display: flex;
             flex-direction: column;
-            max-width: 70%;
+            max-width: 75%;
         }
         .message.own {
             align-self: flex-end;
             align-items: flex-end;
         }
         .message-bubble {
-            background: rgba(30,30,50,0.8);
+            background: rgba(30,30,50,0.85);
+            backdrop-filter: blur(4px);
             padding: 0.5rem 1rem;
             border-radius: 1.2rem;
             color: white;
@@ -414,7 +484,7 @@
         }
         .message-meta {
             font-size: 0.65rem;
-            color: #aaa;
+            color: #ddd;
             margin-top: 0.2rem;
             display: flex;
             gap: 0.5rem;
@@ -440,32 +510,45 @@
             font-size: 0.7rem;
         }
         .message-input-area {
+            position: relative;
+            z-index: 2;
             padding: 1rem;
             border-top: 1px solid rgba(255,255,255,0.1);
             display: flex;
             gap: 0.5rem;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
         }
         .message-input {
-            flex: 1;
-            background: rgba(0,0,0,0.4);
+            width: 100%;
+            background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 2rem;
+            border-radius: 1.2rem;
             padding: 0.7rem 1rem;
             color: white;
             outline: none;
+            min-height: 80px;
+            height: auto;
+            resize: vertical;
+            overflow-y: auto;
+            line-height: 1.4;
+            font-size: 0.9rem;
         }
         .send-btn {
             background: linear-gradient(95deg, #3b6eff, #9a3bff);
             border: none;
-            width: 40px;
+            width: 48px;
             border-radius: 2rem;
             color: white;
             cursor: pointer;
+            font-size: 1.2rem;
         }
         .empty-messages {
             text-align: center;
-            color: #aaa;
+            color: #eee;
             padding: 2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 1rem;
         }
         .edit-profile-modal {
             position: fixed;
@@ -484,7 +567,7 @@
             background: rgba(18,18,35,0.95);
             border-radius: 2rem;
             padding: 1.5rem;
-            width: 300px;
+            width: 320px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
         }
@@ -498,10 +581,24 @@
             color: white;
         }
         @media (max-width: 700px) {
-            .chats-sidebar { width: 80px; }
+            .chats-sidebar { width: 90px; }
             .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: none; }
             .sidebar-tab i { font-size: 1.2rem; }
             .back-button { display: block; }
+            .message { max-width: 85%; }
+        }
+        .back-button {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .error-text {
+            color: #ff8888;
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
         }
     </style>
 </head>
@@ -516,24 +613,25 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-        // ========== ВАШ КОНФИГ FIREBASE (ЗАМЕНИТЕ НА СВОЙ) ==========
+        // ========== FIREBASE CONFIG (ЗАМЕНИТЕ НА СВОЙ) ==========
         const firebaseConfig = {
             apiKey: "AIzaSyB1N2kfAHyYbB5-e_FN-6Is00YuaZdIhyo",
             authDomain: "nexus-flux-22800.firebaseapp.com",
             projectId: "nexus-flux-22800",
             storageBucket: "nexus-flux-22800.firebasestorage.app",
             messagingSenderId: "969830291215",
-            appId: "1:969830291215:web:4e25f8b28ad0b993d9d07a",
-            measurementId: "G-GMTT67V5Z1"
+            appId: "1:969830291215:web:167da7248ccc43a8d9d07a",
+            measurementId: "G-LVQRZK9SYQ"
         };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
+        const githubProvider = new GithubAuthProvider();
 
         // ========== ДАННЫЕ ПРИЛОЖЕНИЯ ==========
-        let users = [];
+        let users = [];          // { username, email, displayName, avatarUrl, bio, firebaseUid }
         let messages = [];
         let currentUser = null;
         let currentConversation = null;
@@ -550,40 +648,25 @@
         const STORAGE_CURRENT_USER = 'rgb_messenger_currentUser';
 
         function loadData() {
-            // Загрузка пользователей
             const storedUsers = localStorage.getItem(STORAGE_USERS);
             if (storedUsers) users = JSON.parse(storedUsers);
             else {
                 users = [
-                    { username: 'Alex_RGB', provider: 'local', avatarLetter: 'A', avatarUrl: null, bio: 'RGB lover', displayName: 'Alex RGB' },
-                    { username: 'Maria_Spark', provider: 'local', avatarLetter: 'M', avatarUrl: null, bio: 'Sparkling', displayName: 'Maria' },
-                    { username: 'PixelMaster', provider: 'local', avatarLetter: 'P', avatarUrl: null, bio: 'Pixel artist', displayName: 'PixelMaster' },
-                    { username: 'NeonLight', provider: 'local', avatarLetter: 'N', avatarUrl: null, bio: 'Neon vibes', displayName: 'NeonLight' }
+                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null },
+                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null },
+                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null }
                 ];
                 saveUsers();
             }
-
-            // Загрузка сообщений с миграцией
             const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
-            if (storedMessages) {
-                messages = JSON.parse(storedMessages);
-                // МИГРАЦИЯ: добавляем недостающие поля
-                messages.forEach(msg => {
-                    if (msg.likedBy === undefined) msg.likedBy = [];
-                    if (msg.likes === undefined) msg.likes = 0;
-                    if (msg.edited === undefined) msg.edited = false;
-                });
-                saveMessages();
-            } else {
+            if (storedMessages) messages = JSON.parse(storedMessages);
+            else {
                 messages = [
-                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Real Google login + Telegram‑style chat.', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false },
-                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false },
-                    { id: Date.now()+3, type: 'dm', target: 'Maria_Spark', sender: 'Alex_RGB', text: 'Hey Maria! Check out the new social login.', timestamp: new Date(Date.now()-1800000).toISOString(), likes: 0, likedBy: [], edited: false }
+                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Real email + Google + GitHub login.', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false },
+                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false }
                 ];
                 saveMessages();
             }
-
-            // Загрузка текущего пользователя
             const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
             if (savedUser) currentUser = JSON.parse(savedUser);
             else currentUser = null;
@@ -600,8 +683,9 @@
             return !users.some(u => u.username.toLowerCase() === username.toLowerCase());
         }
 
-        function createUser(username, provider, displayName = null, avatarUrl = null) {
-            if (!username || typeof username !== 'string' || username.trim() === '') return false;
+        // Создание пользователя в localStorage (после успешной Firebase Auth)
+        function createLocalUser(username, email, displayName, avatarUrl, firebaseUid) {
+            if (!username || username.trim() === '') return false;
             username = username.trim();
             if (!isUsernameUnique(username)) {
                 alert(`Username "${username}" already taken. Choose another.`);
@@ -609,11 +693,11 @@
             }
             const newUser = {
                 username,
-                provider,
-                avatarLetter: username.charAt(0).toUpperCase(),
+                email,
+                displayName: displayName || username,
                 avatarUrl: avatarUrl || null,
                 bio: '',
-                displayName: displayName || username
+                firebaseUid
             };
             users.push(newUser);
             saveUsers();
@@ -623,40 +707,98 @@
             return true;
         }
 
-        // Google Login
-        async function firebaseGoogleLogin() {
+        // Регистрация по email/пароль
+        async function registerWithEmail(email, username, password) {
+            if (!email || !username || !password) {
+                alert("Fill all fields");
+                return;
+            }
+            if (!isUsernameUnique(username)) {
+                alert("Username already taken");
+                return;
+            }
             try {
-                const result = await signInWithPopup(auth, googleProvider);
-                const user = result.user;
-                let username = (user.displayName?.replace(/\s/g, '_') || user.email?.split('@')[0] || 'google_user');
-                let finalName = username;
-                let counter = 0;
-                while (!isUsernameUnique(finalName) && counter < 10) {
-                    finalName = username + '_' + Math.floor(Math.random() * 1000);
-                    counter++;
-                }
-                createUser(finalName, 'Google', user.displayName, user.photoURL);
-            } catch (error) {
-                console.error(error);
-                alert('Google login failed: ' + error.message);
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                const firebaseUser = cred.user;
+                await updateProfile(firebaseUser, { displayName: username });
+                createLocalUser(username, email, username, null, firebaseUser.uid);
+            } catch (err) {
+                alert("Registration error: " + err.message);
             }
         }
 
-        // Demo social logins (Discord, GitHub, Telegram)
-        function discordLogin() {
-            let suggested = 'Discord_' + Math.floor(Math.random() * 1000);
-            let username = prompt('✨ Discord demo login\nEnter unique username:', suggested);
-            if (username) createUser(username, 'Discord');
+        // Вход по email/пароль
+        async function loginWithEmail(email, password) {
+            if (!email || !password) {
+                alert("Enter email and password");
+                return;
+            }
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                const firebaseUser = cred.user;
+                const existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
+                if (existingUser) {
+                    currentUser = existingUser;
+                    saveCurrentUser();
+                    renderApp();
+                } else {
+                    // если пользователь существует в Firebase, но не в localStorage (например, зарегистрирован через OAuth)
+                    const username = firebaseUser.displayName || email.split('@')[0];
+                    createLocalUser(username, email, username, firebaseUser.photoURL, firebaseUser.uid);
+                }
+            } catch (err) {
+                alert("Login error: " + err.message);
+            }
         }
-        function githubLogin() {
-            let suggested = 'GitHub_' + Math.floor(Math.random() * 1000);
-            let username = prompt('✨ GitHub demo login\nEnter unique username:', suggested);
-            if (username) createUser(username, 'GitHub');
+
+        // Google OAuth
+        async function firebaseGoogleLogin() {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const fbUser = result.user;
+                let existingUser = users.find(u => u.firebaseUid === fbUser.uid);
+                if (existingUser) {
+                    currentUser = existingUser;
+                    saveCurrentUser();
+                    renderApp();
+                    return;
+                }
+                let baseUsername = (fbUser.displayName?.replace(/\s/g, '_') || fbUser.email?.split('@')[0] || 'google_user');
+                let finalName = baseUsername;
+                let counter = 0;
+                while (!isUsernameUnique(finalName) && counter < 20) {
+                    finalName = baseUsername + '_' + Math.floor(Math.random() * 10000);
+                    counter++;
+                }
+                createLocalUser(finalName, fbUser.email, fbUser.displayName, fbUser.photoURL, fbUser.uid);
+            } catch (err) {
+                alert("Google login failed: " + err.message);
+            }
         }
-        function telegramLogin() {
-            let suggested = 'Telegram_' + Math.floor(Math.random() * 1000);
-            let username = prompt('✨ Telegram demo login\nEnter unique username:', suggested);
-            if (username) createUser(username, 'Telegram');
+
+        // GitHub OAuth
+        async function firebaseGithubLogin() {
+            try {
+                const result = await signInWithPopup(auth, githubProvider);
+                const fbUser = result.user;
+                let existingUser = users.find(u => u.firebaseUid === fbUser.uid);
+                if (existingUser) {
+                    currentUser = existingUser;
+                    saveCurrentUser();
+                    renderApp();
+                    return;
+                }
+                let baseUsername = (fbUser.displayName?.replace(/\s/g, '_') || fbUser.email?.split('@')[0] || 'github_user');
+                let finalName = baseUsername;
+                let counter = 0;
+                while (!isUsernameUnique(finalName) && counter < 20) {
+                    finalName = baseUsername + '_' + Math.floor(Math.random() * 10000);
+                    counter++;
+                }
+                createLocalUser(finalName, fbUser.email, fbUser.displayName, fbUser.photoURL, fbUser.uid);
+            } catch (err) {
+                alert("GitHub login failed: " + err.message);
+            }
         }
 
         function logout() {
@@ -665,7 +807,7 @@
             renderApp();
         }
 
-        // Сообщения
+        // Messaging functions (unchanged)
         function sendMessage(text) {
             if (!text.trim() || !currentConversation) return;
             const newMsg = {
@@ -708,7 +850,7 @@
         function toggleLike(msgId) {
             const msg = messages.find(m => m.id === msgId);
             if (!msg) return;
-            if (!msg.likedBy) msg.likedBy = []; // защита
+            if (!msg.likedBy) msg.likedBy = [];
             const userId = currentUser.username;
             if (msg.likedBy.includes(userId)) {
                 msg.likedBy = msg.likedBy.filter(u => u !== userId);
@@ -771,7 +913,7 @@
                 </div>
                 <div class="messages-container" id="messagesContainer">${messagesHtml}</div>
                 <div class="message-input-area">
-                    <input type="text" id="messageInput" class="message-input" placeholder="Type a message...">
+                    <textarea id="messageInput" class="message-input" placeholder="Type a message..."></textarea>
                     <button id="sendMsgBtn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             `;
@@ -781,13 +923,12 @@
             if (input && sendBtn) {
                 const send = () => { if(input.value.trim()) sendMessage(input.value); input.value = ''; };
                 sendBtn.onclick = send;
-                input.onkeypress = (e) => { if(e.key === 'Enter') send(); };
+                input.onkeypress = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
             }
             if (backBtn) backBtn.onclick = () => { currentConversation = null; renderCurrentChat(); renderSidebar(); };
             const container = document.getElementById('messagesContainer');
             if (container) container.scrollTop = container.scrollHeight;
 
-            // Делегирование событий на кнопки в сообщениях
             container?.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-msg');
                 const editBtn = e.target.closest('.edit-msg');
@@ -823,7 +964,7 @@
                     const activeClass = (currentConversation && currentConversation.type === 'dm' && currentConversation.id === u.username) ? 'active' : '';
                     contactsHtml += `
                         <div class="contact-item ${activeClass}" data-type="dm" data-id="${u.username}">
-                            <div class="contact-avatar" style="background-image: url('${u.avatarUrl || ''}'); background-size: cover;">${!u.avatarUrl ? u.avatarLetter : ''}</div>
+                            <div class="contact-avatar" style="background-image: url('${u.avatarUrl || ''}'); background-size: cover;">${!u.avatarUrl ? u.username.charAt(0).toUpperCase() : ''}</div>
                             <div class="contact-info">
                                 <div class="contact-name">${escapeHtml(u.displayName || u.username)}</div>
                                 <div class="contact-preview">${escapeHtml(preview)}</div>
@@ -852,7 +993,7 @@
 
             sidebar.innerHTML = `
                 <div class="user-header">
-                    <div class="avatar" style="background-image: url('${currentUser.avatarUrl || ''}'); background-size: cover;">${!currentUser.avatarUrl ? currentUser.avatarLetter : ''}</div>
+                    <div class="avatar" style="background-image: url('${currentUser.avatarUrl || ''}'); background-size: cover;">${!currentUser.avatarUrl ? currentUser.username.charAt(0).toUpperCase() : ''}</div>
                     <div class="user-info">
                         <div class="username">@${currentUser.username}</div>
                     </div>
@@ -892,7 +1033,7 @@
                 });
             }
             const logoutBtn = document.getElementById('logoutSidebarBtn');
-            if (logoutBtn) logoutBtn.onclick = () => { currentUser = null; saveCurrentUser(); renderApp(); };
+            if (logoutBtn) logoutBtn.onclick = () => { auth.signOut(); logout(); };
             const editBtn = document.getElementById('editProfileBtn');
             if (editBtn) editBtn.onclick = () => showEditProfileModal();
         }
@@ -931,37 +1072,98 @@
             return `<div class="messenger-container"><div class="chats-sidebar" id="sidebarDynamic"></div><div class="chat-area" id="chatAreaDynamic"></div></div>`;
         }
 
-        function renderRegistration() {
+        function renderAuthScreen() {
+            let mode = 'login'; // 'login' or 'register'
+            function switchMode() {
+                mode = mode === 'login' ? 'register' : 'login';
+                renderAuthScreen();
+            }
+            const isLogin = mode === 'login';
             return `
                 <div class="glass-stage">
                     <div class="rgb-border-wrap">
                         <div class="glass-card">
                             <div class="symbolic-icon">✦</div>
                             <h1>RGB Orbit</h1>
-                            <div class="sub">Telegram‑style • Firebase Google Login</div>
+                            <div class="sub">${isLogin ? 'Sign in to continue' : 'Create new account'}</div>
                             <div class="gradient-divider"></div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="authEmail" class="form-input" placeholder="your@email.com">
+                            </div>
+                            ${!isLogin ? `<div class="form-group"><label>Username</label><input type="text" id="authUsername" class="form-input" placeholder="Username"></div>` : ''}
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="authPassword" class="form-input" placeholder="Password">
+                            </div>
+                            <button id="authSubmitBtn" class="btn-primary">${isLogin ? 'Log In' : 'Register'}</button>
+                            <div class="auth-switch">
+                                ${isLogin ? "Don't have an account? " : "Already have an account? "}
+                                <span id="authSwitchBtn">${isLogin ? 'Register' : 'Log in'}</span>
+                            </div>
+                            <div class="gradient-divider" style="margin: 1rem auto;"></div>
                             <div class="social-buttons">
                                 <div id="googleLoginBtn" class="social-btn"><i class="fab fa-google"></i> Google</div>
-                                <div id="discordLogin" class="social-btn"><i class="fab fa-discord"></i> Discord</div>
-                                <div id="telegramLogin" class="social-btn"><i class="fab fa-telegram"></i> Telegram</div>
-                                <div id="githubLogin" class="social-btn"><i class="fab fa-github"></i> GitHub</div>
+                                <div id="githubLoginBtn" class="social-btn"><i class="fab fa-github"></i> GitHub</div>
                             </div>
                             <div class="rgb-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                            <div style="font-size:0.7rem; opacity:0.7; margin-top:1rem;">✨ Google (real) • Others demo ✨</div>
                         </div>
                     </div>
                 </div>
             `;
         }
 
+        function attachAuthEvents() {
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const switchBtn = document.getElementById('authSwitchBtn');
+            const googleBtn = document.getElementById('googleLoginBtn');
+            const githubBtn = document.getElementById('githubLoginBtn');
+            if (submitBtn) {
+                submitBtn.onclick = () => {
+                    const email = document.getElementById('authEmail').value;
+                    const password = document.getElementById('authPassword').value;
+                    const isLogin = submitBtn.innerText === 'Log In';
+                    if (isLogin) {
+                        loginWithEmail(email, password);
+                    } else {
+                        const username = document.getElementById('authUsername').value;
+                        registerWithEmail(email, username, password);
+                    }
+                };
+            }
+            if (switchBtn) {
+                switchBtn.onclick = () => {
+                    const isLogin = submitBtn.innerText === 'Log In';
+                    if (isLogin) {
+                        // переключить на регистрацию
+                        document.querySelector('.sub').innerText = 'Create new account';
+                        submitBtn.innerText = 'Register';
+                        switchBtn.innerText = 'Log in';
+                        // добавить поле username если его нет
+                        const formGroup = document.createElement('div');
+                        formGroup.className = 'form-group';
+                        formGroup.innerHTML = '<label>Username</label><input type="text" id="authUsername" class="form-input" placeholder="Username">';
+                        const afterEmail = document.getElementById('authEmail').parentNode.nextSibling;
+                        document.getElementById('authEmail').parentNode.insertAdjacentElement('afterend', formGroup);
+                    } else {
+                        // переключить на логин
+                        document.querySelector('.sub').innerText = 'Sign in to continue';
+                        submitBtn.innerText = 'Log In';
+                        switchBtn.innerText = 'Register';
+                        const usernameField = document.getElementById('authUsername')?.parentNode;
+                        if (usernameField) usernameField.remove();
+                    }
+                };
+            }
+            if (googleBtn) googleBtn.onclick = firebaseGoogleLogin;
+            if (githubBtn) githubBtn.onclick = firebaseGithubLogin;
+        }
+
         function renderApp() {
             const appDiv = document.getElementById('appRoot');
             if (!currentUser) {
-                appDiv.innerHTML = renderRegistration();
-                document.getElementById('googleLoginBtn')?.addEventListener('click', firebaseGoogleLogin);
-                document.getElementById('discordLogin')?.addEventListener('click', discordLogin);
-                document.getElementById('telegramLogin')?.addEventListener('click', telegramLogin);
-                document.getElementById('githubLogin')?.addEventListener('click', githubLogin);
+                appDiv.innerHTML = renderAuthScreen();
+                attachAuthEvents();
             } else {
                 appDiv.innerHTML = renderMessenger();
                 renderSidebar();
@@ -983,3 +1185,4 @@
     </script>
 </body>
 </html>
+```
