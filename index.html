@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title> Nexus_Flux | Мессенджер нового поколения </title>
+    <title>Nexus Flux | Мессенджер нового поколения</title>
     <script type="importmap">
         {
             "imports": {
@@ -759,7 +759,7 @@
         const googleProvider = new GoogleAuthProvider();
         const githubProvider = new GithubAuthProvider();
 
-        // ========== ДАННЫЕ ПРИЛОЖЕНИЯ ==========
+        // ========== ДАННЫЕ ПРИЛОЖЕНИЯ (без демо-пользователей) ==========
         let users = [];
         let messages = [];
         let currentUser = null;
@@ -768,7 +768,6 @@
         let pollingInterval = null;
         let soundEnabled = true;
         let notificationsEnabled = true;
-        let lastMessageCount = 0;
 
         const channels = [
             { id: 'general', name: '# general', icon: 'fa-globe' },
@@ -776,12 +775,11 @@
             { id: 'random', name: '# random', icon: 'fa-music' }
         ];
 
-        const STORAGE_USERS = 'rgb_messenger_users';
-        const STORAGE_MESSAGES = 'rgb_messenger_messages';
-        const STORAGE_CURRENT_USER = 'rgb_messenger_currentUser';
-        const STORAGE_SETTINGS = 'rgb_messenger_settings';
+        const STORAGE_USERS = 'nexus_flux_users';
+        const STORAGE_MESSAGES = 'nexus_flux_messages';
+        const STORAGE_CURRENT_USER = 'nexus_flux_currentUser';
+        const STORAGE_SETTINGS = 'nexus_flux_settings';
 
-        // Загрузка настроек
         function loadSettings() {
             const settings = localStorage.getItem(STORAGE_SETTINGS);
             if (settings) {
@@ -796,13 +794,10 @@
 
         function loadData() {
             const storedUsers = localStorage.getItem(STORAGE_USERS);
-            if (storedUsers) users = JSON.parse(storedUsers);
-            else {
-                users = [
-                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
-                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
-                    { username: "Info", email: "", displayName: "Info", avatarUrl: null, bio: "Info", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false }
-                ];
+            if (storedUsers) {
+                users = JSON.parse(storedUsers);
+            } else {
+                users = []; // пустой список, без демо-пользователей
                 saveUsers();
             }
             const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
@@ -812,13 +807,11 @@
                     if (msg.likedBy === undefined) msg.likedBy = [];
                     if (msg.likes === undefined) msg.likes = 0;
                     if (msg.edited === undefined) msg.edited = false;
+                    if (msg.reactions === undefined) msg.reactions = {};
                 });
                 saveMessages();
             } else {
-                messages = [
-                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Info', text: 'Welcome to Nexus_Flux!', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false, reactions: {} },
-                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'Info', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false, reactions: {} }
-                ];
+                messages = []; // пустые сообщения
                 saveMessages();
             }
             const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
@@ -976,12 +969,11 @@
             renderApp();
         }
 
-        // Messaging functions
         function sendMessage(text, imageBase64 = null) {
             if (!text.trim() && !imageBase64) return;
             let finalText = text.trim();
             if (imageBase64) {
-                finalText += (finalText ? '\n' : '') + `[Image](${imageBase64})`; // простой маркер
+                finalText += (finalText ? '\n' : '') + `[Image](${imageBase64})`;
             }
             const newMsg = {
                 id: Date.now(),
@@ -1100,7 +1092,6 @@
                     const isOwn = msg.sender === currentUser.username;
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                     const likedClass = (msg.likedBy && msg.likedBy.includes(currentUser.username)) ? 'active' : '';
-                    // Отображение текста и возможного изображения
                     let displayText = msg.text;
                     const imageMatch = msg.text.match(/\[Image\]\((data:image\/[^;]+;base64,[^)]+)\)/);
                     let imageHtml = '';
@@ -1108,12 +1099,11 @@
                         imageHtml = `<br><img src="${imageMatch[1]}" style="max-width:200px; max-height:200px; border-radius:10px; margin-top:5px;">`;
                         displayText = displayText.replace(/\[Image\]\([^)]+\)/, '');
                     }
-                    // Реакции
                     let reactionsHtml = '';
                     if (msg.reactions) {
-                        for (const [emoji, users] of Object.entries(msg.reactions)) {
-                            const active = users.includes(currentUser.username);
-                            reactionsHtml += `<button class="reaction-btn ${active ? 'active' : ''}" data-reaction="${emoji}" data-msg-id="${msg.id}">${emoji} ${users.length}</button>`;
+                        for (const [emoji, usersArr] of Object.entries(msg.reactions)) {
+                            const active = usersArr.includes(currentUser.username);
+                            reactionsHtml += `<button class="reaction-btn ${active ? 'active' : ''}" data-reaction="${emoji}" data-msg-id="${msg.id}">${emoji} ${usersArr.length}</button>`;
                         }
                     }
                     messagesHtml += `
@@ -1343,7 +1333,7 @@
                     ` : ''}
                     <div class="settings-section">
                         <div class="settings-section-title">About</div>
-                        <div class="settings-item-info"><p> Nexus_Flux v2.0 | Telegram‑style messenger</p></div>
+                        <div class="settings-item-info"><p>Nexus Flux v1.0 | Telegram‑style messenger</p></div>
                     </div>
                 </div>
             `;
@@ -1404,7 +1394,7 @@
                     <div class="rgb-border-wrap">
                         <div class="glass-card">
                             <div class="symbolic-icon">✦</div>
-                            <h1>Nexus_Flux</h1>
+                            <h1>Nexus Flux</h1>
                             <div class="sub">${isLogin ? 'Sign in to continue' : 'Create new account'}</div>
                             <div class="gradient-divider"></div>
                             <div class="form-group">
