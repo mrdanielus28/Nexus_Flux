@@ -243,7 +243,7 @@
 
         /* ========= MESSENGER (TELEGRAM STYLE) ========= */
         .messenger-container {
-            width: 98vw;          /* почти на весь экран */
+            width: 98vw;
             max-width: 1600px;
             height: 95vh;
             margin: 0.8rem;
@@ -269,6 +269,15 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            position: relative;
+        }
+        .burger-menu {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 8px;
         }
         .avatar {
             width: 48px;
@@ -538,18 +547,69 @@
             background: rgba(0,0,0,0.3);
             border-radius: 1rem;
         }
+
+        /* MODAL SETTINGS (Telegram style) */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .settings-content {
+            background: rgba(18,18,35,0.95);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            width: 400px;
+            max-width: 90%;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .settings-header h2 {
+            color: white;
+            font-size: 1.4rem;
+        }
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .settings-section {
+            margin-bottom: 1rem;
+        }
+        .settings-section-title {
+            color: #aaa;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
         .settings-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.8rem;
+            padding: 0.8rem 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .settings-item h4 {
+        .settings-item-info h4 {
             color: white;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
-        .settings-item p {
+        .settings-item-info p {
             color: #aaa;
             font-size: 0.7rem;
         }
@@ -585,25 +645,35 @@
             border-radius: 2rem;
             cursor: pointer;
             width: 100%;
-            margin-top: 0.5rem;
             text-align: center;
+            margin-top: 0.5rem;
         }
         .danger-btn:hover {
             background: rgba(255,70,70,0.4);
         }
+        .admin-btn {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid rgba(255,193,7,0.4);
+            color: #ffc107;
+        }
+        .admin-btn:hover {
+            background: rgba(255,193,7,0.4);
+        }
         .logout-btn {
             background: rgba(255,70,70,0.2);
             border: 1px solid rgba(255,100,100,0.4);
-            padding: 0.4rem;
-            border-radius: 40px;
             color: #ffb7b7;
+            padding: 0.5rem;
+            border-radius: 2rem;
             cursor: pointer;
+            width: 100%;
             text-align: center;
             margin-top: 0.5rem;
         }
         .logout-btn:hover {
             background: rgba(255,70,70,0.4);
         }
+
         @media (max-width: 700px) {
             .chats-sidebar { width: 80px; }
             .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: none; }
@@ -654,7 +724,7 @@
         let messages = [];
         let currentUser = null;
         let currentConversation = null;
-        let activeTab = 'chats';   // 'chats', 'channels', 'groups', 'settings'
+        let activeTab = 'chats';   // 'chats', 'channels', 'groups'
 
         const channels = [
             { id: 'general', name: '# general', icon: 'fa-globe' },
@@ -671,9 +741,9 @@
             if (storedUsers) users = JSON.parse(storedUsers);
             else {
                 users = [
-                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null, settings: { notifications: true, sound: true } },
-                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null, settings: { notifications: true, sound: true } },
-                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null, settings: { notifications: true, sound: true } }
+                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
+                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false },
+                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null, settings: { notifications: true, sound: true }, isAdmin: false }
                 ];
                 saveUsers();
             }
@@ -702,21 +772,32 @@
             return !users.some(u => u.username.toLowerCase() === username.toLowerCase());
         }
 
-        function createLocalUser(username, email, displayName, avatarUrl, firebaseUid) {
+        function generateUniqueUsername(base) {
+            let username = base;
+            let counter = 1;
+            while (!isUsernameUnique(username)) {
+                username = base + '_' + counter;
+                counter++;
+            }
+            return username;
+        }
+
+        // Создание пользователя в localStorage (без добавления случайных цифр, только уникализация через _1, _2...)
+        function createLocalUser(username, email, displayName, avatarUrl, firebaseUid, isAdmin = false) {
             if (!username || username.trim() === '') return false;
-            username = username.trim();
-            if (!isUsernameUnique(username)) {
-                alert(`Username "${username}" already taken. Choose another.`);
-                return false;
+            let finalUsername = username.trim();
+            if (!isUsernameUnique(finalUsername)) {
+                finalUsername = generateUniqueUsername(finalUsername);
             }
             const newUser = {
-                username,
+                username: finalUsername,
                 email,
-                displayName: displayName || username,
+                displayName: displayName || finalUsername,
                 avatarUrl: avatarUrl || null,
                 bio: '',
                 firebaseUid,
-                settings: { notifications: true, sound: true }
+                settings: { notifications: true, sound: true },
+                isAdmin: isAdmin || (email === "mr.danielus1358@gmail.com")
             };
             users.push(newUser);
             saveUsers();
@@ -724,6 +805,49 @@
             saveCurrentUser();
             renderApp();
             return true;
+        }
+
+        // Вход или связывание существующего пользователя
+        async function handleSocialLogin(firebaseUser, provider) {
+            let existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
+            if (existingUser) {
+                currentUser = existingUser;
+                saveCurrentUser();
+                renderApp();
+                return;
+            }
+            // поиск по email
+            existingUser = users.find(u => u.email === firebaseUser.email);
+            if (existingUser) {
+                // связываем аккаунт
+                existingUser.firebaseUid = firebaseUser.uid;
+                saveUsers();
+                currentUser = existingUser;
+                saveCurrentUser();
+                renderApp();
+                return;
+            }
+            // новый пользователь
+            let baseUsername = firebaseUser.displayName ? firebaseUser.displayName.replace(/\s/g, '_') : firebaseUser.email.split('@')[0];
+            createLocalUser(baseUsername, firebaseUser.email, firebaseUser.displayName, firebaseUser.photoURL, firebaseUser.uid);
+        }
+
+        async function firebaseGoogleLogin() {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                await handleSocialLogin(result.user, 'Google');
+            } catch (err) {
+                alert("Google login failed: " + err.message);
+            }
+        }
+
+        async function firebaseGithubLogin() {
+            try {
+                const result = await signInWithPopup(auth, githubProvider);
+                await handleSocialLogin(result.user, 'GitHub');
+            } catch (err) {
+                alert("GitHub login failed: " + err.message);
+            }
         }
 
         async function registerWithEmail(email, username, password) {
@@ -739,7 +863,7 @@
                 const cred = await createUserWithEmailAndPassword(auth, email, password);
                 const firebaseUser = cred.user;
                 await updateProfile(firebaseUser, { displayName: username });
-                createLocalUser(username, email, username, null, firebaseUser.uid);
+                createLocalUser(username, email, username, null, firebaseUser.uid, email === "mr.danielus1358@gmail.com");
             } catch (err) {
                 alert("Registration error: " + err.message);
             }
@@ -753,65 +877,17 @@
             try {
                 const cred = await signInWithEmailAndPassword(auth, email, password);
                 const firebaseUser = cred.user;
-                const existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
+                let existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
                 if (existingUser) {
                     currentUser = existingUser;
                     saveCurrentUser();
                     renderApp();
                 } else {
                     const username = firebaseUser.displayName || email.split('@')[0];
-                    createLocalUser(username, email, username, firebaseUser.photoURL, firebaseUser.uid);
+                    createLocalUser(username, email, username, firebaseUser.photoURL, firebaseUser.uid, email === "mr.danielus1358@gmail.com");
                 }
             } catch (err) {
                 alert("Login error: " + err.message);
-            }
-        }
-
-        async function firebaseGoogleLogin() {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                const fbUser = result.user;
-                let existingUser = users.find(u => u.firebaseUid === fbUser.uid);
-                if (existingUser) {
-                    currentUser = existingUser;
-                    saveCurrentUser();
-                    renderApp();
-                    return;
-                }
-                let baseUsername = (fbUser.displayName?.replace(/\s/g, '_') || fbUser.email?.split('@')[0] || 'google_user');
-                let finalName = baseUsername;
-                let counter = 0;
-                while (!isUsernameUnique(finalName) && counter < 20) {
-                    finalName = baseUsername + '_' + Math.floor(Math.random() * 10000);
-                    counter++;
-                }
-                createLocalUser(finalName, fbUser.email, fbUser.displayName, fbUser.photoURL, fbUser.uid);
-            } catch (err) {
-                alert("Google login failed: " + err.message);
-            }
-        }
-
-        async function firebaseGithubLogin() {
-            try {
-                const result = await signInWithPopup(auth, githubProvider);
-                const fbUser = result.user;
-                let existingUser = users.find(u => u.firebaseUid === fbUser.uid);
-                if (existingUser) {
-                    currentUser = existingUser;
-                    saveCurrentUser();
-                    renderApp();
-                    return;
-                }
-                let baseUsername = (fbUser.displayName?.replace(/\s/g, '_') || fbUser.email?.split('@')[0] || 'github_user');
-                let finalName = baseUsername;
-                let counter = 0;
-                while (!isUsernameUnique(finalName) && counter < 20) {
-                    finalName = baseUsername + '_' + Math.floor(Math.random() * 10000);
-                    counter++;
-                }
-                createLocalUser(finalName, fbUser.email, fbUser.displayName, fbUser.photoURL, fbUser.uid);
-            } catch (err) {
-                alert("GitHub login failed: " + err.message);
             }
         }
 
@@ -988,7 +1064,6 @@
             const sidebar = document.getElementById('sidebarDynamic');
             if (!sidebar) return;
 
-            // Определяем контент в зависимости от activeTab
             let mainContent = '';
             if (activeTab === 'chats') {
                 const otherUsers = users.filter(u => u.username !== currentUser.username);
@@ -1028,25 +1103,11 @@
                 mainContent = `<div class="contacts-list">${channelsHtml}</div>`;
             } else if (activeTab === 'groups') {
                 mainContent = `<div class="empty-messages" style="text-align:center; padding:1rem;">👥 Groups coming soon</div>`;
-            } else if (activeTab === 'settings') {
-                mainContent = `
-                    <div style="padding: 0.5rem;">
-                        <div class="settings-item">
-                            <div><h4>Notifications</h4><p>Show message notifications</p></div>
-                            <div class="toggle-switch ${currentUser.settings?.notifications ? 'active' : ''}" id="notifToggle"><div class="slider"></div></div>
-                        </div>
-                        <div class="settings-item">
-                            <div><h4>Sound</h4><p>Play sound for new messages</p></div>
-                            <div class="toggle-switch ${currentUser.settings?.sound ? 'active' : ''}" id="soundToggle"><div class="slider"></div></div>
-                        </div>
-                        <button id="deleteAccountBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
-                        <button id="logoutBtnSettings" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
-                    </div>
-                `;
             }
 
             sidebar.innerHTML = `
                 <div class="user-header">
+                    <button class="burger-menu" id="burgerMenuBtn"><i class="fas fa-bars"></i></button>
                     <div class="avatar" style="background-image: url('${currentUser.avatarUrl || ''}'); background-size: cover;">${!currentUser.avatarUrl ? currentUser.username.charAt(0).toUpperCase() : ''}</div>
                     <div class="user-info">
                         <div class="username">@${currentUser.username}</div>
@@ -1056,25 +1117,21 @@
                     <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" data-tab="chats"><i class="fas fa-comment"></i><span> Chats</span></button>
                     <button class="sidebar-tab ${activeTab === 'channels' ? 'active' : ''}" data-tab="channels"><i class="fas fa-bullhorn"></i><span> Channels</span></button>
                     <button class="sidebar-tab ${activeTab === 'groups' ? 'active' : ''}" data-tab="groups"><i class="fas fa-users"></i><span> Groups</span></button>
-                    <button class="sidebar-tab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings"><i class="fas fa-cog"></i><span> Settings</span></button>
                 </div>
                 <div class="search-box"><input type="text" class="search-input" id="searchInput" placeholder="Search..."></div>
                 ${mainContent}
             `;
 
-            // Обработчики для вкладок
+            // Обработчики вкладок
             document.querySelectorAll('.sidebar-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     activeTab = tab.getAttribute('data-tab');
                     renderSidebar();
-                    if (activeTab !== 'settings') {
-                        // Если переключились на чаты/каналы, то сохраняем текущий conversation
-                        if (currentConversation) renderCurrentChat();
-                    }
+                    if (currentConversation) renderCurrentChat();
                 });
             });
 
-            // Обработчики для контактов (только если не настройки)
+            // Обработчики контактов
             if (activeTab === 'chats' || activeTab === 'channels') {
                 document.querySelectorAll('.contact-item').forEach(el => {
                     el.addEventListener('click', () => {
@@ -1097,44 +1154,101 @@
                 });
             } else if (searchInput) {
                 searchInput.style.display = 'none';
-            } else if (!searchInput && (activeTab === 'chats' || activeTab === 'channels')) {
-                // если поиск не создан, но нужно – игнорируем
             }
 
-            // Обработчики настроек
-            if (activeTab === 'settings') {
-                const notifToggle = document.getElementById('notifToggle');
-                const soundToggle = document.getElementById('soundToggle');
-                if (notifToggle) {
-                    notifToggle.onclick = () => {
-                        const isActive = notifToggle.classList.contains('active');
-                        if (isActive) notifToggle.classList.remove('active');
-                        else notifToggle.classList.add('active');
-                        currentUser.settings = currentUser.settings || {};
-                        currentUser.settings.notifications = !isActive;
-                        saveCurrentUser();
-                        const idx = users.findIndex(u => u.username === currentUser.username);
-                        if (idx !== -1) users[idx] = currentUser;
-                        saveUsers();
-                    };
-                }
-                if (soundToggle) {
-                    soundToggle.onclick = () => {
-                        const isActive = soundToggle.classList.contains('active');
-                        if (isActive) soundToggle.classList.remove('active');
-                        else soundToggle.classList.add('active');
-                        currentUser.settings = currentUser.settings || {};
-                        currentUser.settings.sound = !isActive;
-                        saveCurrentUser();
-                        const idx = users.findIndex(u => u.username === currentUser.username);
-                        if (idx !== -1) users[idx] = currentUser;
-                        saveUsers();
-                    };
-                }
-                const deleteBtn = document.getElementById('deleteAccountBtn');
-                if (deleteBtn) deleteBtn.onclick = () => deleteAccount();
-                const logoutBtn = document.getElementById('logoutBtnSettings');
-                if (logoutBtn) logoutBtn.onclick = () => logout();
+            // Бургер-меню -> открыть настройки
+            const burgerBtn = document.getElementById('burgerMenuBtn');
+            if (burgerBtn) burgerBtn.onclick = () => showSettingsModal();
+        }
+
+        function showSettingsModal() {
+            const modal = document.createElement('div');
+            modal.className = 'settings-modal';
+            modal.innerHTML = `
+                <div class="settings-content">
+                    <div class="settings-header">
+                        <h2>Settings</h2>
+                        <button class="close-settings"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="settings-section">
+                        <div class="settings-section-title">Preferences</div>
+                        <div class="settings-item">
+                            <div class="settings-item-info">
+                                <h4>Notifications</h4>
+                                <p>Show message notifications</p>
+                            </div>
+                            <div class="toggle-switch ${currentUser.settings?.notifications ? 'active' : ''}" id="notifToggle"><div class="slider"></div></div>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-info">
+                                <h4>Sound</h4>
+                                <p>Play sound for new messages</p>
+                            </div>
+                            <div class="toggle-switch ${currentUser.settings?.sound ? 'active' : ''}" id="soundToggle"><div class="slider"></div></div>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <div class="settings-section-title">Account</div>
+                        <button id="deleteAccountSettingsBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
+                        <button id="logoutSettingsBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
+                    </div>
+                    ${currentUser.isAdmin ? `
+                    <div class="settings-section">
+                        <div class="settings-section-title">Admin Panel</div>
+                        <button id="clearAllMessagesBtn" class="danger-btn admin-btn"><i class="fas fa-database"></i> Clear All Messages</button>
+                    </div>
+                    ` : ''}
+                    <div class="settings-section">
+                        <div class="settings-section-title">About</div>
+                        <div class="settings-item-info" style="padding:0.5rem 0;">
+                            <p>RGB Orbit v1.0</p>
+                            <p>Telegram‑style messenger with Firebase Auth</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            const closeBtn = modal.querySelector('.close-settings');
+            closeBtn.onclick = () => modal.remove();
+            const notifToggle = modal.querySelector('#notifToggle');
+            const soundToggle = modal.querySelector('#soundToggle');
+            notifToggle.onclick = () => {
+                const isActive = notifToggle.classList.contains('active');
+                if (isActive) notifToggle.classList.remove('active');
+                else notifToggle.classList.add('active');
+                currentUser.settings = currentUser.settings || {};
+                currentUser.settings.notifications = !isActive;
+                saveCurrentUser();
+                const idx = users.findIndex(u => u.username === currentUser.username);
+                if (idx !== -1) users[idx] = currentUser;
+                saveUsers();
+            };
+            soundToggle.onclick = () => {
+                const isActive = soundToggle.classList.contains('active');
+                if (isActive) soundToggle.classList.remove('active');
+                else soundToggle.classList.add('active');
+                currentUser.settings = currentUser.settings || {};
+                currentUser.settings.sound = !isActive;
+                saveCurrentUser();
+                const idx = users.findIndex(u => u.username === currentUser.username);
+                if (idx !== -1) users[idx] = currentUser;
+                saveUsers();
+            };
+            const deleteBtn = modal.querySelector('#deleteAccountSettingsBtn');
+            if (deleteBtn) deleteBtn.onclick = () => { modal.remove(); deleteAccount(); };
+            const logoutBtn = modal.querySelector('#logoutSettingsBtn');
+            if (logoutBtn) logoutBtn.onclick = () => { modal.remove(); logout(); };
+            if (currentUser.isAdmin) {
+                const clearBtn = modal.querySelector('#clearAllMessagesBtn');
+                if (clearBtn) clearBtn.onclick = () => {
+                    if (confirm("⚠️ Delete ALL messages for all users? This cannot be undone.")) {
+                        messages = [];
+                        saveMessages();
+                        modal.remove();
+                        renderCurrentChat();
+                        renderSidebar();
+                    }
+                };
             }
         }
 
