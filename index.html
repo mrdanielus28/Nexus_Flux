@@ -293,14 +293,20 @@
             color: white;
             font-size: 0.95rem;
         }
-        .logout-btn {
-            background: rgba(255,70,70,0.2);
-            border: 1px solid rgba(255,100,100,0.4);
+        .settings-menu-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 2rem;
             padding: 0.4rem 0.8rem;
-            border-radius: 40px;
-            color: #ffb7b7;
+            color: white;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 0.8rem;
+        }
+        .settings-menu-btn:hover {
+            background: rgba(255,255,255,0.2);
         }
         .sidebar-tabs {
             display: flex;
@@ -537,7 +543,8 @@
             background: rgba(0,0,0,0.3);
             border-radius: 1rem;
         }
-        .edit-profile-modal {
+        /* Modal for settings */
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -550,22 +557,82 @@
             justify-content: center;
             z-index: 1000;
         }
-        .edit-profile-content {
+        .modal-content {
             background: rgba(18,18,35,0.95);
             border-radius: 2rem;
             padding: 1.5rem;
-            width: 320px;
-            text-align: center;
+            width: 400px;
+            max-width: 90%;
             border: 1px solid rgba(255,255,255,0.2);
         }
-        .edit-profile-content input, .edit-profile-content textarea {
-            width: 100%;
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            border-radius: 1rem;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .modal-header h2 {
             color: white;
+            font-size: 1.4rem;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .settings-item h4 {
+            color: white;
+            font-size: 1rem;
+        }
+        .settings-item p {
+            color: #aaa;
+            font-size: 0.7rem;
+        }
+        .toggle-switch {
+            width: 40px;
+            height: 20px;
+            background: #333;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+        .toggle-switch.active {
+            background: #3b6eff;
+        }
+        .toggle-switch .slider {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: 0.2s;
+        }
+        .toggle-switch.active .slider {
+            left: 22px;
+        }
+        .danger-btn {
+            background: rgba(255,70,70,0.2);
+            border: 1px solid rgba(255,100,100,0.4);
+            color: #ffb7b7;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .danger-btn:hover {
+            background: rgba(255,70,70,0.4);
         }
         @media (max-width: 700px) {
             .chats-sidebar { width: 90px; }
@@ -600,7 +667,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
         // ========== FIREBASE CONFIG (ЗАМЕНИТЕ НА СВОЙ) ==========
         const firebaseConfig = {
@@ -618,7 +685,7 @@
         const githubProvider = new GithubAuthProvider();
 
         // ========== ДАННЫЕ ПРИЛОЖЕНИЯ ==========
-        let users = [];          // { username, email, displayName, avatarUrl, bio, firebaseUid }
+        let users = [];          // { username, email, displayName, avatarUrl, bio, firebaseUid, settings }
         let messages = [];
         let currentUser = null;
         let currentConversation = null;
@@ -639,9 +706,9 @@
             if (storedUsers) users = JSON.parse(storedUsers);
             else {
                 users = [
-                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null },
-                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null },
-                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null }
+                    { username: "Alex_RGB", email: "alex@example.com", displayName: "Alex RGB", avatarUrl: null, bio: "RGB lover", firebaseUid: null, settings: { notifications: true, sound: true } },
+                    { username: "Maria_Spark", email: "maria@example.com", displayName: "Maria Spark", avatarUrl: null, bio: "Sparkling", firebaseUid: null, settings: { notifications: true, sound: true } },
+                    { username: "NeonLight", email: "neon@example.com", displayName: "NeonLight", avatarUrl: null, bio: "Neon vibes", firebaseUid: null, settings: { notifications: true, sound: true } }
                 ];
                 saveUsers();
             }
@@ -670,7 +737,6 @@
             return !users.some(u => u.username.toLowerCase() === username.toLowerCase());
         }
 
-        // Создание пользователя в localStorage (после успешной Firebase Auth)
         function createLocalUser(username, email, displayName, avatarUrl, firebaseUid) {
             if (!username || username.trim() === '') return false;
             username = username.trim();
@@ -684,7 +750,8 @@
                 displayName: displayName || username,
                 avatarUrl: avatarUrl || null,
                 bio: '',
-                firebaseUid
+                firebaseUid,
+                settings: { notifications: true, sound: true }
             };
             users.push(newUser);
             saveUsers();
@@ -694,7 +761,6 @@
             return true;
         }
 
-        // Регистрация по email/пароль
         async function registerWithEmail(email, username, password) {
             if (!email || !username || !password) {
                 alert("Fill all fields");
@@ -714,7 +780,6 @@
             }
         }
 
-        // Вход по email/пароль
         async function loginWithEmail(email, password) {
             if (!email || !password) {
                 alert("Enter email and password");
@@ -729,7 +794,6 @@
                     saveCurrentUser();
                     renderApp();
                 } else {
-                    // если пользователь существует в Firebase, но не в localStorage (например, зарегистрирован через OAuth)
                     const username = firebaseUser.displayName || email.split('@')[0];
                     createLocalUser(username, email, username, firebaseUser.photoURL, firebaseUser.uid);
                 }
@@ -738,7 +802,6 @@
             }
         }
 
-        // Google OAuth
         async function firebaseGoogleLogin() {
             try {
                 const result = await signInWithPopup(auth, googleProvider);
@@ -763,7 +826,6 @@
             }
         }
 
-        // GitHub OAuth
         async function firebaseGithubLogin() {
             try {
                 const result = await signInWithPopup(auth, githubProvider);
@@ -789,6 +851,28 @@
         }
 
         function logout() {
+            auth.signOut();
+            currentUser = null;
+            saveCurrentUser();
+            renderApp();
+        }
+
+        async function deleteAccount() {
+            if (!confirm("⚠️ Are you sure you want to delete your account? This action is irreversible and will remove all your messages and data.")) return;
+            try {
+                // Удаляем пользователя из Firebase Auth
+                const user = auth.currentUser;
+                if (user) await deleteUser(user);
+            } catch (err) {
+                console.warn("Firebase delete error:", err);
+                alert("Could not delete from Firebase. Local data will be cleared.");
+            }
+            // Удаляем все локальные данные пользователя
+            users = users.filter(u => u.username !== currentUser.username);
+            // Удаляем все сообщения пользователя (опционально)
+            messages = messages.filter(m => m.sender !== currentUser.username);
+            saveUsers();
+            saveMessages();
             currentUser = null;
             saveCurrentUser();
             renderApp();
@@ -984,8 +1068,7 @@
                     <div class="user-info">
                         <div class="username">@${currentUser.username}</div>
                     </div>
-                    <button id="logoutSidebarBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-                    <button id="editProfileBtn" class="logout-btn" style="margin-left:5px;"><i class="fas fa-user-edit"></i></button>
+                    <button id="settingsMenuBtn" class="settings-menu-btn"><i class="fas fa-cog"></i> Settings</button>
                 </div>
                 <div class="sidebar-tabs">
                     <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" data-tab="chats"><i class="fas fa-comment"></i><span> Chats</span></button>
@@ -1019,40 +1102,72 @@
                     });
                 });
             }
-            const logoutBtn = document.getElementById('logoutSidebarBtn');
-            if (logoutBtn) logoutBtn.onclick = () => { auth.signOut(); logout(); };
-            const editBtn = document.getElementById('editProfileBtn');
-            if (editBtn) editBtn.onclick = () => showEditProfileModal();
+            const settingsBtn = document.getElementById('settingsMenuBtn');
+            if (settingsBtn) settingsBtn.onclick = () => showSettingsModal();
         }
 
-        function showEditProfileModal() {
+        function showSettingsModal() {
             const modal = document.createElement('div');
-            modal.className = 'edit-profile-modal';
+            modal.className = 'modal';
             modal.innerHTML = `
-                <div class="edit-profile-content">
-                    <h3>Edit Profile</h3>
-                    <input type="text" id="editDisplayName" placeholder="Display name" value="${escapeHtml(currentUser.displayName || '')}">
-                    <textarea id="editBio" placeholder="Bio" rows="2">${escapeHtml(currentUser.bio || '')}</textarea>
-                    <input type="text" id="editAvatarUrl" placeholder="Avatar URL (optional)" value="${currentUser.avatarUrl || ''}">
-                    <button id="saveProfileEdit" class="social-btn" style="margin-top:10px;">Save</button>
-                    <button id="closeModal" class="social-btn" style="margin-top:5px;">Cancel</button>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Settings</h2>
+                        <button class="modal-close" id="closeSettingsModal"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="settings-item">
+                        <div>
+                            <h4>Notifications</h4>
+                            <p>Show message notifications</p>
+                        </div>
+                        <div class="toggle-switch ${currentUser.settings?.notifications ? 'active' : ''}" id="notifToggle">
+                            <div class="slider"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <div>
+                            <h4>Sound</h4>
+                            <p>Play sound for new messages</p>
+                        </div>
+                        <div class="toggle-switch ${currentUser.settings?.sound ? 'active' : ''}" id="soundToggle">
+                            <div class="slider"></div>
+                        </div>
+                    </div>
+                    <button id="deleteAccountBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
                 </div>
             `;
             document.body.appendChild(modal);
-            document.getElementById('saveProfileEdit')?.addEventListener('click', () => {
-                currentUser.displayName = document.getElementById('editDisplayName').value;
-                currentUser.bio = document.getElementById('editBio').value;
-                currentUser.avatarUrl = document.getElementById('editAvatarUrl').value;
-                if (!currentUser.avatarUrl) currentUser.avatarUrl = null;
+            const closeBtn = document.getElementById('closeSettingsModal');
+            closeBtn.onclick = () => modal.remove();
+            const notifToggle = document.getElementById('notifToggle');
+            const soundToggle = document.getElementById('soundToggle');
+            notifToggle.onclick = () => {
+                const isActive = notifToggle.classList.contains('active');
+                if (isActive) notifToggle.classList.remove('active');
+                else notifToggle.classList.add('active');
+                currentUser.settings = currentUser.settings || {};
+                currentUser.settings.notifications = !isActive;
                 saveCurrentUser();
                 const idx = users.findIndex(u => u.username === currentUser.username);
                 if (idx !== -1) users[idx] = currentUser;
                 saveUsers();
+            };
+            soundToggle.onclick = () => {
+                const isActive = soundToggle.classList.contains('active');
+                if (isActive) soundToggle.classList.remove('active');
+                else soundToggle.classList.add('active');
+                currentUser.settings = currentUser.settings || {};
+                currentUser.settings.sound = !isActive;
+                saveCurrentUser();
+                const idx = users.findIndex(u => u.username === currentUser.username);
+                if (idx !== -1) users[idx] = currentUser;
+                saveUsers();
+            };
+            const deleteBtn = document.getElementById('deleteAccountBtn');
+            deleteBtn.onclick = async () => {
                 modal.remove();
-                renderSidebar();
-                renderCurrentChat();
-            });
-            document.getElementById('closeModal')?.addEventListener('click', () => modal.remove());
+                await deleteAccount();
+            };
         }
 
         function renderMessenger() {
@@ -1060,7 +1175,7 @@
         }
 
         function renderAuthScreen() {
-            let mode = 'login'; // 'login' or 'register'
+            let mode = 'login';
             function switchMode() {
                 mode = mode === 'login' ? 'register' : 'login';
                 renderAuthScreen();
@@ -1122,18 +1237,14 @@
                 switchBtn.onclick = () => {
                     const isLogin = submitBtn.innerText === 'Log In';
                     if (isLogin) {
-                        // переключить на регистрацию
                         document.querySelector('.sub').innerText = 'Create new account';
                         submitBtn.innerText = 'Register';
                         switchBtn.innerText = 'Log in';
-                        // добавить поле username если его нет
                         const formGroup = document.createElement('div');
                         formGroup.className = 'form-group';
                         formGroup.innerHTML = '<label>Username</label><input type="text" id="authUsername" class="form-input" placeholder="Username">';
-                        const afterEmail = document.getElementById('authEmail').parentNode.nextSibling;
                         document.getElementById('authEmail').parentNode.insertAdjacentElement('afterend', formGroup);
                     } else {
-                        // переключить на логин
                         document.querySelector('.sub').innerText = 'Sign in to continue';
                         submitBtn.innerText = 'Log In';
                         switchBtn.innerText = 'Register';
