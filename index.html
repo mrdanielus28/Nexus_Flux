@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>RGB Orbit | Telegram‑style Messenger</title>
+    <title>RGB Orbit | Мессенджер нового поколения</title>
     <script type="importmap">
         {
             "imports": {
@@ -29,6 +29,29 @@
             justify-content: center;
             position: relative;
             overflow-x: hidden;
+            transition: background 0.3s;
+        }
+
+        body.light-theme {
+            background: #e0e0e0;
+        }
+        body.light-theme .messenger-container {
+            background: rgba(240,240,255,0.85);
+            backdrop-filter: blur(16px);
+        }
+        body.light-theme .user-header, body.light-theme .sidebar-tabs, body.light-theme .chat-header {
+            background: rgba(0,0,0,0.1);
+        }
+        body.light-theme .contact-name, body.light-theme .username, body.light-theme .chat-info h3 {
+            color: #111;
+        }
+        body.light-theme .message-bubble {
+            background: rgba(255,255,255,0.85);
+            color: #111;
+        }
+        body.light-theme .message.own .message-bubble {
+            background: #3b6eff;
+            color: white;
         }
 
         /* RGB animated background */
@@ -198,6 +221,7 @@
             align-items: center;
             gap: 8px;
             transition: 0.2s;
+            text-decoration: none;
         }
         .social-btn:hover {
             background: rgba(50,50,80,0.9);
@@ -255,6 +279,7 @@
             overflow: hidden;
             position: relative;
             z-index: 10;
+            transition: all 0.3s;
         }
         .chats-sidebar {
             width: 320px;
@@ -262,6 +287,7 @@
             border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s;
         }
         .user-header {
             padding: 1rem;
@@ -277,7 +303,6 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
-            margin-right: 8px;
         }
         .avatar {
             width: 48px;
@@ -485,6 +510,25 @@
             margin-top: 0.2rem;
             display: flex;
             gap: 0.5rem;
+            align-items: center;
+        }
+        .message-reactions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .reaction-btn {
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 20px;
+            padding: 2px 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .reaction-btn.active {
+            background: #ffd700;
+            color: #000;
         }
         .message-actions {
             position: absolute;
@@ -531,7 +575,7 @@
             line-height: 1.4;
             font-size: 0.9rem;
         }
-        .send-btn {
+        .attach-btn, .send-btn {
             background: linear-gradient(95deg, #3b6eff, #9a3bff);
             border: none;
             width: 48px;
@@ -548,7 +592,7 @@
             border-radius: 1rem;
         }
 
-        /* MODAL SETTINGS (Telegram style) */
+        /* Modal settings */
         .settings-modal {
             position: fixed;
             top: 0;
@@ -659,27 +703,23 @@
         .admin-btn:hover {
             background: rgba(255,193,7,0.4);
         }
-        .logout-btn {
-            background: rgba(255,70,70,0.2);
-            border: 1px solid rgba(255,100,100,0.4);
-            color: #ffb7b7;
-            padding: 0.5rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            margin-top: 0.5rem;
-        }
-        .logout-btn:hover {
-            background: rgba(255,70,70,0.4);
-        }
 
         @media (max-width: 700px) {
-            .chats-sidebar { width: 80px; }
-            .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: none; }
-            .sidebar-tab i { font-size: 1.2rem; }
-            .back-button { display: block; }
+            .chats-sidebar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 20;
+                background: #1e1e2e;
+            }
+            .chats-sidebar.open {
+                transform: translateX(0);
+            }
+            .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: inline; }
             .message { max-width: 85%; }
+            .back-button { display: block; }
         }
         .back-button {
             display: none;
@@ -724,7 +764,11 @@
         let messages = [];
         let currentUser = null;
         let currentConversation = null;
-        let activeTab = 'chats';   // 'chats', 'channels', 'groups'
+        let activeTab = 'chats';
+        let pollingInterval = null;
+        let soundEnabled = true;
+        let notificationsEnabled = true;
+        let lastMessageCount = 0;
 
         const channels = [
             { id: 'general', name: '# general', icon: 'fa-globe' },
@@ -735,6 +779,20 @@
         const STORAGE_USERS = 'rgb_messenger_users';
         const STORAGE_MESSAGES = 'rgb_messenger_messages';
         const STORAGE_CURRENT_USER = 'rgb_messenger_currentUser';
+        const STORAGE_SETTINGS = 'rgb_messenger_settings';
+
+        // Загрузка настроек
+        function loadSettings() {
+            const settings = localStorage.getItem(STORAGE_SETTINGS);
+            if (settings) {
+                const s = JSON.parse(settings);
+                soundEnabled = s.sound !== undefined ? s.sound : true;
+                notificationsEnabled = s.notifications !== undefined ? s.notifications : true;
+            }
+        }
+        function saveSettings() {
+            localStorage.setItem(STORAGE_SETTINGS, JSON.stringify({ sound: soundEnabled, notifications: notificationsEnabled }));
+        }
 
         function loadData() {
             const storedUsers = localStorage.getItem(STORAGE_USERS);
@@ -748,11 +806,18 @@
                 saveUsers();
             }
             const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
-            if (storedMessages) messages = JSON.parse(storedMessages);
-            else {
+            if (storedMessages) {
+                messages = JSON.parse(storedMessages);
+                messages.forEach(msg => {
+                    if (msg.likedBy === undefined) msg.likedBy = [];
+                    if (msg.likes === undefined) msg.likes = 0;
+                    if (msg.edited === undefined) msg.edited = false;
+                });
+                saveMessages();
+            } else {
                 messages = [
-                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥 Real email + Google + GitHub login.', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false },
-                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false }
+                    { id: Date.now()+1, type: 'channel', target: 'general', sender: 'Alex_RGB', text: 'Welcome to RGB Orbit! 🔥', timestamp: new Date(Date.now()-7200000).toISOString(), likes: 2, likedBy: [], edited: false, reactions: {} },
+                    { id: Date.now()+2, type: 'channel', target: 'tech', sender: 'NeonLight', text: 'Anyone into WebGL?', timestamp: new Date(Date.now()-3600000).toISOString(), likes: 1, likedBy: [], edited: false, reactions: {} }
                 ];
                 saveMessages();
             }
@@ -782,7 +847,6 @@
             return username;
         }
 
-        // Создание пользователя в localStorage (без добавления случайных цифр, только уникализация через _1, _2...)
         function createLocalUser(username, email, displayName, avatarUrl, firebaseUid, isAdmin = false) {
             if (!username || username.trim() === '') return false;
             let finalUsername = username.trim();
@@ -807,8 +871,7 @@
             return true;
         }
 
-        // Вход или связывание существующего пользователя
-        async function handleSocialLogin(firebaseUser, provider) {
+        async function handleSocialLogin(firebaseUser) {
             let existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
             if (existingUser) {
                 currentUser = existingUser;
@@ -816,10 +879,8 @@
                 renderApp();
                 return;
             }
-            // поиск по email
             existingUser = users.find(u => u.email === firebaseUser.email);
             if (existingUser) {
-                // связываем аккаунт
                 existingUser.firebaseUid = firebaseUser.uid;
                 saveUsers();
                 currentUser = existingUser;
@@ -827,7 +888,6 @@
                 renderApp();
                 return;
             }
-            // новый пользователь
             let baseUsername = firebaseUser.displayName ? firebaseUser.displayName.replace(/\s/g, '_') : firebaseUser.email.split('@')[0];
             createLocalUser(baseUsername, firebaseUser.email, firebaseUser.displayName, firebaseUser.photoURL, firebaseUser.uid);
         }
@@ -835,7 +895,7 @@
         async function firebaseGoogleLogin() {
             try {
                 const result = await signInWithPopup(auth, googleProvider);
-                await handleSocialLogin(result.user, 'Google');
+                await handleSocialLogin(result.user);
             } catch (err) {
                 alert("Google login failed: " + err.message);
             }
@@ -844,7 +904,7 @@
         async function firebaseGithubLogin() {
             try {
                 const result = await signInWithPopup(auth, githubProvider);
-                await handleSocialLogin(result.user, 'GitHub');
+                await handleSocialLogin(result.user);
             } catch (err) {
                 alert("GitHub login failed: " + err.message);
             }
@@ -893,19 +953,19 @@
 
         function logout() {
             auth.signOut();
+            if (pollingInterval) clearInterval(pollingInterval);
             currentUser = null;
             saveCurrentUser();
             renderApp();
         }
 
         async function deleteAccount() {
-            if (!confirm("⚠️ Are you sure you want to delete your account? This action is irreversible and will remove all your messages and data.")) return;
+            if (!confirm("⚠️ Delete your account permanently? All messages will be lost.")) return;
             try {
                 const user = auth.currentUser;
                 if (user) await deleteUser(user);
             } catch (err) {
                 console.warn("Firebase delete error:", err);
-                alert("Could not delete from Firebase. Local data will be cleared.");
             }
             users = users.filter(u => u.username !== currentUser.username);
             messages = messages.filter(m => m.sender !== currentUser.username);
@@ -917,24 +977,52 @@
         }
 
         // Messaging functions
-        function sendMessage(text) {
-            if (!text.trim() || !currentConversation) return;
+        function sendMessage(text, imageBase64 = null) {
+            if (!text.trim() && !imageBase64) return;
+            let finalText = text.trim();
+            if (imageBase64) {
+                finalText += (finalText ? '\n' : '') + `[Image](${imageBase64})`; // простой маркер
+            }
             const newMsg = {
                 id: Date.now(),
                 type: currentConversation.type,
                 target: currentConversation.id,
                 sender: currentUser.username,
-                text: text.trim(),
+                text: finalText,
                 timestamp: new Date().toISOString(),
                 likes: 0,
                 likedBy: [],
-                edited: false
+                edited: false,
+                reactions: {}
             };
             messages.push(newMsg);
             saveMessages();
+            playSound();
             renderCurrentChat();
             renderSidebar();
+            triggerStorageEvent();
         }
+
+        function playSound() {
+            if (soundEnabled) {
+                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log("Audio play failed"));
+            }
+        }
+
+        function triggerStorageEvent() {
+            localStorage.setItem('__sync', Date.now().toString());
+            localStorage.removeItem('__sync');
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_MESSAGES || e.key === STORAGE_USERS || e.key === '__sync') {
+                loadData();
+                if (currentConversation) renderCurrentChat();
+                renderSidebar();
+            }
+        });
 
         function deleteMessage(msgId) {
             const index = messages.findIndex(m => m.id === msgId);
@@ -943,6 +1031,7 @@
                 saveMessages();
                 renderCurrentChat();
                 renderSidebar();
+                triggerStorageEvent();
             }
         }
 
@@ -953,6 +1042,7 @@
                 msg.edited = true;
                 saveMessages();
                 renderCurrentChat();
+                triggerStorageEvent();
             }
         }
 
@@ -970,6 +1060,24 @@
             }
             saveMessages();
             renderCurrentChat();
+            triggerStorageEvent();
+        }
+
+        function addReaction(msgId, reaction) {
+            const msg = messages.find(m => m.id === msgId);
+            if (!msg) return;
+            if (!msg.reactions) msg.reactions = {};
+            const userId = currentUser.username;
+            if (msg.reactions[reaction] && msg.reactions[reaction].includes(userId)) {
+                msg.reactions[reaction] = msg.reactions[reaction].filter(u => u !== userId);
+                if (msg.reactions[reaction].length === 0) delete msg.reactions[reaction];
+            } else {
+                if (!msg.reactions[reaction]) msg.reactions[reaction] = [];
+                msg.reactions[reaction].push(userId);
+            }
+            saveMessages();
+            renderCurrentChat();
+            triggerStorageEvent();
         }
 
         function getMessagesForConversation(type, target) {
@@ -991,18 +1099,38 @@
                 msgs.forEach(msg => {
                     const isOwn = msg.sender === currentUser.username;
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    const likedClass = (msg.likedBy && msg.likedBy.includes(currentUser.username)) ? 'liked' : '';
+                    const likedClass = (msg.likedBy && msg.likedBy.includes(currentUser.username)) ? 'active' : '';
+                    // Отображение текста и возможного изображения
+                    let displayText = msg.text;
+                    const imageMatch = msg.text.match(/\[Image\]\((data:image\/[^;]+;base64,[^)]+)\)/);
+                    let imageHtml = '';
+                    if (imageMatch) {
+                        imageHtml = `<br><img src="${imageMatch[1]}" style="max-width:200px; max-height:200px; border-radius:10px; margin-top:5px;">`;
+                        displayText = displayText.replace(/\[Image\]\([^)]+\)/, '');
+                    }
+                    // Реакции
+                    let reactionsHtml = '';
+                    if (msg.reactions) {
+                        for (const [emoji, users] of Object.entries(msg.reactions)) {
+                            const active = users.includes(currentUser.username);
+                            reactionsHtml += `<button class="reaction-btn ${active ? 'active' : ''}" data-reaction="${emoji}" data-msg-id="${msg.id}">${emoji} ${users.length}</button>`;
+                        }
+                    }
                     messagesHtml += `
                         <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
                             <div class="message-bubble">
-                                ${escapeHtml(msg.text)}${msg.edited ? ' <i style="font-size:0.7rem;">(edited)</i>' : ''}
+                                ${escapeHtml(displayText)}${imageHtml}${msg.edited ? ' <i style="font-size:0.7rem;">(edited)</i>' : ''}
                                 <div class="message-actions">
                                     ${isOwn ? `<button class="edit-msg" data-id="${msg.id}"><i class="fas fa-edit"></i></button>` : ''}
                                     ${isOwn ? `<button class="delete-msg" data-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
                                     <button class="like-msg" data-id="${msg.id}"><i class="fas fa-heart ${likedClass}"></i> ${msg.likes || 0}</button>
                                 </div>
                             </div>
-                            <div class="message-meta"><span>${escapeHtml(msg.sender)}</span><span>${time}</span></div>
+                            <div class="message-meta">
+                                <span>${escapeHtml(msg.sender)}</span>
+                                <span>${time}</span>
+                                <div class="message-reactions">${reactionsHtml}</div>
+                            </div>
                         </div>
                     `;
                 });
@@ -1023,16 +1151,34 @@
                 <div class="messages-container" id="messagesContainer">${messagesHtml}</div>
                 <div class="message-input-area">
                     <textarea id="messageInput" class="message-input" placeholder="Type a message..."></textarea>
+                    <button id="attachImageBtn" class="attach-btn"><i class="fas fa-image"></i></button>
                     <button id="sendMsgBtn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             `;
             const input = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendMsgBtn');
             const backBtn = document.getElementById('backBtn');
+            const attachBtn = document.getElementById('attachImageBtn');
             if (input && sendBtn) {
                 const send = () => { if(input.value.trim()) sendMessage(input.value); input.value = ''; };
                 sendBtn.onclick = send;
                 input.onkeypress = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+            }
+            if (attachBtn) {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                attachBtn.onclick = () => fileInput.click();
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            sendMessage('', ev.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
             }
             if (backBtn) backBtn.onclick = () => { currentConversation = null; renderCurrentChat(); renderSidebar(); };
             const container = document.getElementById('messagesContainer');
@@ -1042,6 +1188,7 @@
                 const deleteBtn = e.target.closest('.delete-msg');
                 const editBtn = e.target.closest('.edit-msg');
                 const likeBtn = e.target.closest('.like-msg');
+                const reactionBtn = e.target.closest('.reaction-btn');
                 if (deleteBtn) {
                     const id = parseInt(deleteBtn.getAttribute('data-id'));
                     if (id) deleteMessage(id);
@@ -1056,6 +1203,11 @@
                 if (likeBtn) {
                     const id = parseInt(likeBtn.getAttribute('data-id'));
                     if (id) toggleLike(id);
+                }
+                if (reactionBtn) {
+                    const id = parseInt(reactionBtn.getAttribute('data-msg-id'));
+                    const reaction = reactionBtn.getAttribute('data-reaction');
+                    if (id && reaction) addReaction(id, reaction);
                 }
             });
         }
@@ -1101,7 +1253,7 @@
                     `;
                 });
                 mainContent = `<div class="contacts-list">${channelsHtml}</div>`;
-            } else if (activeTab === 'groups') {
+            } else {
                 mainContent = `<div class="empty-messages" style="text-align:center; padding:1rem;">👥 Groups coming soon</div>`;
             }
 
@@ -1122,7 +1274,6 @@
                 ${mainContent}
             `;
 
-            // Обработчики вкладок
             document.querySelectorAll('.sidebar-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     activeTab = tab.getAttribute('data-tab');
@@ -1130,19 +1281,13 @@
                     if (currentConversation) renderCurrentChat();
                 });
             });
-
-            // Обработчики контактов
-            if (activeTab === 'chats' || activeTab === 'channels') {
-                document.querySelectorAll('.contact-item').forEach(el => {
-                    el.addEventListener('click', () => {
-                        const type = el.getAttribute('data-type');
-                        const id = el.getAttribute('data-id');
-                        if (type && id) { currentConversation = { type, id }; renderCurrentChat(); renderSidebar(); }
-                    });
+            document.querySelectorAll('.contact-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const type = el.getAttribute('data-type');
+                    const id = el.getAttribute('data-id');
+                    if (type && id) { currentConversation = { type, id }; renderCurrentChat(); renderSidebar(); }
                 });
-            }
-
-            // Поиск
+            });
             const searchInput = document.getElementById('searchInput');
             if (searchInput && (activeTab === 'chats' || activeTab === 'channels')) {
                 searchInput.addEventListener('input', (e) => {
@@ -1156,15 +1301,19 @@
                 searchInput.style.display = 'none';
             }
 
-            // Бургер-меню -> открыть настройки
             const burgerBtn = document.getElementById('burgerMenuBtn');
-            if (burgerBtn) burgerBtn.onclick = () => showSettingsModal();
+            if (burgerBtn) {
+                burgerBtn.onclick = () => {
+                    const sidebarEl = document.querySelector('.chats-sidebar');
+                    if (sidebarEl) sidebarEl.classList.toggle('open');
+                };
+            }
         }
 
         function showSettingsModal() {
-            const modal = document.createElement('div');
-            modal.className = 'settings-modal';
-            modal.innerHTML = `
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'settings-modal';
+            modalDiv.innerHTML = `
                 <div class="settings-content">
                     <div class="settings-header">
                         <h2>Settings</h2>
@@ -1173,83 +1322,70 @@
                     <div class="settings-section">
                         <div class="settings-section-title">Preferences</div>
                         <div class="settings-item">
-                            <div class="settings-item-info">
-                                <h4>Notifications</h4>
-                                <p>Show message notifications</p>
-                            </div>
-                            <div class="toggle-switch ${currentUser.settings?.notifications ? 'active' : ''}" id="notifToggle"><div class="slider"></div></div>
+                            <div class="settings-item-info"><h4>Sound</h4><p>Play sound for new messages</p></div>
+                            <div class="toggle-switch ${soundEnabled ? 'active' : ''}" id="soundToggle"><div class="slider"></div></div>
                         </div>
                         <div class="settings-item">
-                            <div class="settings-item-info">
-                                <h4>Sound</h4>
-                                <p>Play sound for new messages</p>
-                            </div>
-                            <div class="toggle-switch ${currentUser.settings?.sound ? 'active' : ''}" id="soundToggle"><div class="slider"></div></div>
+                            <div class="settings-item-info"><h4>Notifications</h4><p>Show browser notifications</p></div>
+                            <div class="toggle-switch ${notificationsEnabled ? 'active' : ''}" id="notifToggle"><div class="slider"></div></div>
                         </div>
                     </div>
                     <div class="settings-section">
                         <div class="settings-section-title">Account</div>
-                        <button id="deleteAccountSettingsBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
-                        <button id="logoutSettingsBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
+                        <button id="deleteAccountBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
+                        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
                     </div>
                     ${currentUser.isAdmin ? `
                     <div class="settings-section">
                         <div class="settings-section-title">Admin Panel</div>
-                        <button id="clearAllMessagesBtn" class="danger-btn admin-btn"><i class="fas fa-database"></i> Clear All Messages</button>
+                        <button id="clearMessagesBtn" class="danger-btn admin-btn"><i class="fas fa-database"></i> Clear All Messages</button>
                     </div>
                     ` : ''}
                     <div class="settings-section">
                         <div class="settings-section-title">About</div>
-                        <div class="settings-item-info" style="padding:0.5rem 0;">
-                            <p>RGB Orbit v1.0</p>
-                            <p>Telegram‑style messenger with Firebase Auth</p>
-                        </div>
+                        <div class="settings-item-info"><p>RGB Orbit v2.0 | Telegram‑style messenger</p></div>
                     </div>
                 </div>
             `;
-            document.body.appendChild(modal);
-            const closeBtn = modal.querySelector('.close-settings');
-            closeBtn.onclick = () => modal.remove();
-            const notifToggle = modal.querySelector('#notifToggle');
-            const soundToggle = modal.querySelector('#soundToggle');
-            notifToggle.onclick = () => {
-                const isActive = notifToggle.classList.contains('active');
-                if (isActive) notifToggle.classList.remove('active');
-                else notifToggle.classList.add('active');
-                currentUser.settings = currentUser.settings || {};
-                currentUser.settings.notifications = !isActive;
-                saveCurrentUser();
-                const idx = users.findIndex(u => u.username === currentUser.username);
-                if (idx !== -1) users[idx] = currentUser;
-                saveUsers();
-            };
+            document.body.appendChild(modalDiv);
+            modalDiv.querySelector('.close-settings').onclick = () => modalDiv.remove();
+            const soundToggle = modalDiv.querySelector('#soundToggle');
+            const notifToggle = modalDiv.querySelector('#notifToggle');
             soundToggle.onclick = () => {
-                const isActive = soundToggle.classList.contains('active');
-                if (isActive) soundToggle.classList.remove('active');
-                else soundToggle.classList.add('active');
-                currentUser.settings = currentUser.settings || {};
-                currentUser.settings.sound = !isActive;
-                saveCurrentUser();
-                const idx = users.findIndex(u => u.username === currentUser.username);
-                if (idx !== -1) users[idx] = currentUser;
-                saveUsers();
+                const active = soundToggle.classList.toggle('active');
+                soundEnabled = active;
+                saveSettings();
             };
-            const deleteBtn = modal.querySelector('#deleteAccountSettingsBtn');
-            if (deleteBtn) deleteBtn.onclick = () => { modal.remove(); deleteAccount(); };
-            const logoutBtn = modal.querySelector('#logoutSettingsBtn');
-            if (logoutBtn) logoutBtn.onclick = () => { modal.remove(); logout(); };
+            notifToggle.onclick = () => {
+                const active = notifToggle.classList.toggle('active');
+                notificationsEnabled = active;
+                saveSettings();
+                if (notificationsEnabled && Notification.permission === 'default') Notification.requestPermission();
+            };
+            modalDiv.querySelector('#deleteAccountBtn').onclick = () => { modalDiv.remove(); deleteAccount(); };
+            modalDiv.querySelector('#logoutBtn').onclick = () => { modalDiv.remove(); logout(); };
             if (currentUser.isAdmin) {
-                const clearBtn = modal.querySelector('#clearAllMessagesBtn');
-                if (clearBtn) clearBtn.onclick = () => {
-                    if (confirm("⚠️ Delete ALL messages for all users? This cannot be undone.")) {
+                modalDiv.querySelector('#clearMessagesBtn').onclick = () => {
+                    if (confirm('Delete ALL messages for all users?')) {
                         messages = [];
                         saveMessages();
-                        modal.remove();
+                        modalDiv.remove();
                         renderCurrentChat();
                         renderSidebar();
+                        triggerStorageEvent();
                     }
                 };
             }
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(() => {
+                if (currentConversation) {
+                    renderCurrentChat();
+                }
+                renderSidebar();
+            }, 2000);
         }
 
         function renderMessenger() {
@@ -1342,6 +1478,7 @@
         function renderApp() {
             const appDiv = document.getElementById('appRoot');
             if (!currentUser) {
+                if (pollingInterval) clearInterval(pollingInterval);
                 appDiv.innerHTML = renderAuthScreen();
                 attachAuthEvents();
             } else {
@@ -1352,6 +1489,7 @@
                     renderCurrentChat();
                     renderSidebar();
                 } else renderCurrentChat();
+                startPolling();
             }
         }
 
@@ -1360,6 +1498,7 @@
             return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
         }
 
+        loadSettings();
         loadData();
         renderApp();
     </script>
