@@ -2,23 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Nexus Flux | Мессенджер нового поколения</title>
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js"
-            }
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Nexus Flux — три слоя</title>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
         }
 
         body {
@@ -29,32 +22,9 @@
             justify-content: center;
             position: relative;
             overflow-x: hidden;
-            transition: background 0.3s;
         }
 
-        body.light-theme {
-            background: #e0e0e0;
-        }
-        body.light-theme .messenger-container {
-            background: rgba(240,240,255,0.85);
-            backdrop-filter: blur(16px);
-        }
-        body.light-theme .user-header, body.light-theme .sidebar-tabs, body.light-theme .chat-header {
-            background: rgba(0,0,0,0.1);
-        }
-        body.light-theme .contact-name, body.light-theme .username, body.light-theme .chat-info h3 {
-            color: #111;
-        }
-        body.light-theme .message-bubble {
-            background: rgba(255,255,255,0.85);
-            color: #111;
-        }
-        body.light-theme .message.own .message-bubble {
-            background: #3b6eff;
-            color: white;
-        }
-
-        /* RGB animated background */
+        /* RGB фон */
         .animated-bg {
             position: fixed;
             top: 0;
@@ -103,170 +73,8 @@
             100% { transform: translate(8%,12%) scale(1.1); opacity:0.7; }
         }
 
-        /* Registration / Login screen */
-        .glass-stage {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            max-width: 520px;
-            margin: 2rem;
-            padding: 1rem;
-        }
-        .rgb-border-wrap {
-            background: linear-gradient(135deg, #ff0000, #ff7700, #ffff00, #00ff88, #0088ff, #ff00cc, #ff0000);
-            background-size: 300% 300%;
-            animation: borderGlow 6s ease infinite alternate;
-            padding: 3px;
-            border-radius: 48px;
-            transition: all 0.4s;
-            box-shadow: 0 25px 40px -15px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
-        }
-        .glass-card {
-            background: rgba(12,12,25,0.55);
-            backdrop-filter: blur(16px);
-            border-radius: 46px;
-            padding: 2rem 1.8rem;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .symbolic-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            filter: drop-shadow(0 0 8px rgba(255,255,200,0.6));
-            animation: gentlePulse 3s infinite alternate;
-        }
-        h1 {
-            font-size: 2.4rem;
-            font-weight: 700;
-            background: linear-gradient(120deg, #fff, #ffaaff, #aaffff);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            animation: textShift 8s linear infinite;
-        }
-        .sub {
-            color: rgba(255,255,245,0.9);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-        .gradient-divider {
-            width: 100px;
-            height: 3px;
-            background: linear-gradient(90deg, #ff3366, #33ff66, #3366ff, #ff33cc);
-            margin: 1rem auto;
-            border-radius: 3px;
-            animation: widthPulse 2.5s infinite alternate;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.3rem;
-            color: #ccc;
-            font-size: 0.8rem;
-        }
-        .form-input {
-            width: 100%;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 2rem;
-            padding: 0.7rem 1rem;
-            color: white;
-            outline: none;
-            font-size: 0.9rem;
-        }
-        .form-input:focus {
-            border-color: #ff66cc;
-        }
-        .btn-primary {
-            background: linear-gradient(95deg, #ff3b6f, #ff9a3b);
-            border: none;
-            padding: 0.7rem 1rem;
-            border-radius: 2rem;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-        }
-        .btn-primary:hover {
-            transform: scale(0.98);
-        }
-        .auth-switch {
-            margin-top: 1rem;
-            color: #aaa;
-            font-size: 0.8rem;
-        }
-        .auth-switch span {
-            color: #ff66cc;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .social-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-        .social-btn {
-            background: rgba(30,30,55,0.8);
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-            text-decoration: none;
-        }
-        .social-btn:hover {
-            background: rgba(50,50,80,0.9);
-            border-color: #ff66aa;
-        }
-        .rgb-dots {
-            display: flex;
-            justify-content: center;
-            gap: 18px;
-            margin-top: 1rem;
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ff3366;
-            animation: dotRGB 2s infinite alternate;
-        }
-        .dot:nth-child(2) { animation-delay: 0.4s; background: #33ff66; }
-        .dot:nth-child(3) { animation-delay: 0.8s; background: #33aaff; }
-        .dot:nth-child(4) { animation-delay: 1.2s; background: #ff66cc; }
-
-        @keyframes borderGlow {
-            0% { background-position: 0% 50%; filter: hue-rotate(0deg);}
-            100% { background-position: 100% 50%; filter: hue-rotate(15deg);}
-        }
-        @keyframes gentlePulse {
-            0% { transform: scale(0.96); text-shadow: 0 0 2px cyan;}
-            100% { transform: scale(1.04); text-shadow: 0 0 20px magenta;}
-        }
-        @keyframes textShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        @keyframes widthPulse {
-            0% { width: 60px; opacity:0.6; }
-            100% { width: 140px; opacity:1; }
-        }
-        @keyframes dotRGB {
-            0% { transform: scale(0.7); background: #ff3366; }
-            100% { transform: scale(1.5); background: #ff99cc; }
-        }
-
-        /* ========= MESSENGER (TELEGRAM STYLE) ========= */
-        .messenger-container {
+        /* Главный контейнер */
+        .app-wrapper {
             width: 98vw;
             max-width: 1600px;
             height: 95vh;
@@ -279,99 +87,85 @@
             overflow: hidden;
             position: relative;
             z-index: 10;
-            transition: all 0.3s;
         }
-        .chats-sidebar {
-            width: 320px;
+
+        /* Боковая панель навигации */
+        .sidebar-nav {
+            width: 260px;
             background: rgba(0,0,0,0.3);
             border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s;
+            padding: 1rem 0;
         }
-        .user-header {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: relative;
+        .sidebar-nav .brand {
+            padding: 1rem 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #fff, #ffaaff, #aaffff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
         }
-        .burger-menu {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff9966, #ff5e62);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.3rem;
-            color: white;
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
-        }
-        .user-info {
-            flex: 1;
-        }
-        .username {
-            font-weight: 600;
-            color: white;
-            font-size: 0.95rem;
-        }
-        .sidebar-tabs {
-            display: flex;
-            flex-direction: column;
-            padding: 0.5rem;
-            gap: 0.3rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .sidebar-tab {
-            background: none;
-            border: none;
-            padding: 0.7rem;
-            border-radius: 1rem;
+        .nav-item {
+            padding: 0.8rem 1.5rem;
             color: #aaa;
             cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.9rem;
-            text-align: left;
             display: flex;
             align-items: center;
             gap: 12px;
+            transition: 0.2s;
+            border-left: 3px solid transparent;
         }
-        .sidebar-tab i {
-            width: 24px;
-        }
-        .sidebar-tab.active {
+        .nav-item i { width: 24px; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active {
             background: rgba(59,110,255,0.3);
             color: white;
+            border-left-color: #3b6eff;
         }
-        .sidebar-tab:hover:not(.active) {
-            background: rgba(255,255,255,0.1);
-        }
-        .search-box {
-            padding: 0.8rem;
-        }
-        .search-input {
-            width: 100%;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 2rem;
-            padding: 0.5rem 1rem;
-            color: white;
-            outline: none;
-        }
-        .contacts-list {
+
+        /* Область контента */
+        .content-area {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Заголовок слоя */
+        .layer-header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        .layer-header h2 {
+            color: white;
+            font-size: 1.4rem;
+        }
+        .layer-header p {
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        .layer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* ============ СОЦ. СЕТЬ (мессенджер) ============ */
+        .chat-layout {
+            display: flex;
+            height: 100%;
+            gap: 1rem;
+        }
+        .contact-list {
+            width: 280px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 1rem;
             overflow-y: auto;
             padding: 0.5rem;
         }
@@ -384,96 +178,34 @@
             cursor: pointer;
             transition: 0.1s;
         }
-        .contact-item:hover, .contact-item.active {
-            background: rgba(255,255,255,0.1);
-        }
+        .contact-item:hover { background: rgba(255,255,255,0.1); }
+        .contact-item.active { background: rgba(59,110,255,0.3); }
         .contact-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
-            color: white;
-            position: relative;
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #555; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: white; background-size: cover;
         }
-        .contact-status {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #2ecc71;
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            border: 2px solid #0f0f1a;
-        }
-        .contact-info {
-            flex: 1;
-        }
-        .contact-name {
-            font-weight: 500;
-            color: #eee;
-        }
-        .contact-preview {
-            font-size: 0.7rem;
-            color: #aaa;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .contact-info { flex: 1; }
+        .contact-name { color: #eee; font-weight: 500; }
+        .contact-preview { color: #aaa; font-size: 0.7rem; }
 
-        /* Chat area with background image */
-        .chat-area {
+        .chat-window {
             flex: 1;
+            background: url('https://zefirka.club/uploads/posts/2022-09/1663555543_3-zefirka-club-p-oboi-dlya-chata-telegramm-3.jpg') center/cover no-repeat;
+            border-radius: 1rem;
+            position: relative;
             display: flex;
             flex-direction: column;
-            background: url('https://zefirka.club/uploads/posts/2022-09/1663555543_3-zefirka-club-p-oboi-dlya-chata-telegramm-3.jpg') center/cover no-repeat;
-            position: relative;
         }
-        .chat-area::before {
+        .chat-window::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.5);
             pointer-events: none;
+            border-radius: 1rem;
         }
-        .chat-header {
-            position: relative;
-            z-index: 2;
-            padding: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px);
-        }
-        .chat-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            background-size: cover;
-            flex-shrink: 0;
-        }
-        .chat-info h3 {
-            font-size: 1rem;
-            color: white;
-        }
-        .messages-container {
+        .chat-messages {
             position: relative;
             z-index: 2;
             flex: 1;
@@ -481,253 +213,134 @@
             padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
-        }
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 75%;
-        }
-        .message.own {
-            align-self: flex-end;
-            align-items: flex-end;
+            gap: 0.5rem;
         }
         .message-bubble {
             background: rgba(30,30,50,0.85);
             backdrop-filter: blur(4px);
             padding: 0.5rem 1rem;
-            border-radius: 1.2rem;
+            border-radius: 1rem;
             color: white;
-            word-break: break-word;
-            position: relative;
+            max-width: 70%;
+            align-self: flex-start;
         }
-        .message.own .message-bubble {
+        .message-bubble.own {
+            align-self: flex-end;
             background: linear-gradient(95deg, #3b6eff, #9a3bff);
         }
-        .message-meta {
-            font-size: 0.65rem;
-            color: #ddd;
-            margin-top: 0.2rem;
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .message-reactions {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-        .reaction-btn {
-            background: rgba(0,0,0,0.5);
-            border: none;
-            border-radius: 20px;
-            padding: 2px 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-        .reaction-btn.active {
-            background: #ffd700;
-            color: #000;
-        }
-        .message-actions {
-            position: absolute;
-            top: 0;
-            right: 0;
-            display: none;
-            gap: 5px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 12px;
-            padding: 2px 5px;
-        }
-        .message:hover .message-actions {
-            display: flex;
-        }
-        .message-actions button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-        .message-input-area {
+        .chat-input-area {
             position: relative;
             z-index: 2;
-            padding: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 0.8rem;
             display: flex;
             gap: 0.5rem;
             background: rgba(0,0,0,0.4);
             backdrop-filter: blur(10px);
         }
-        .message-input {
-            width: 100%;
+        .chat-input {
+            flex: 1;
             background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 1.2rem;
-            padding: 0.7rem 1rem;
+            border-radius: 2rem;
+            padding: 0.6rem 1rem;
             color: white;
             outline: none;
-            min-height: 80px;
-            height: auto;
-            resize: vertical;
-            overflow-y: auto;
-            line-height: 1.4;
-            font-size: 0.9rem;
         }
-        .attach-btn, .send-btn {
+        .chat-send {
             background: linear-gradient(95deg, #3b6eff, #9a3bff);
             border: none;
-            width: 48px;
             border-radius: 2rem;
+            padding: 0 1.2rem;
             color: white;
             cursor: pointer;
-            font-size: 1.2rem;
-        }
-        .empty-messages {
-            text-align: center;
-            color: #eee;
-            padding: 2rem;
-            background: rgba(0,0,0,0.3);
-            border-radius: 1rem;
         }
 
-        /* Modal settings */
-        .settings-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
+        /* ============ ФОРУМ ============ */
+        .forum-categories {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .settings-content {
-            background: rgba(18,18,35,0.95);
-            border-radius: 2rem;
-            padding: 1.5rem;
-            width: 400px;
-            max-width: 90%;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .settings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        .settings-header h2 {
-            color: white;
-            font-size: 1.4rem;
-        }
-        .close-settings {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-        .settings-section {
+            gap: 1rem;
+            flex-wrap: wrap;
             margin-bottom: 1rem;
         }
-        .settings-section-title {
-            color: #aaa;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-        .settings-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.8rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .settings-item-info h4 {
-            color: white;
-            font-size: 0.95rem;
-        }
-        .settings-item-info p {
-            color: #aaa;
-            font-size: 0.7rem;
-        }
-        .toggle-switch {
-            width: 40px;
-            height: 20px;
-            background: #333;
-            border-radius: 20px;
-            position: relative;
+        .forum-category {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 1rem;
+            flex: 1 1 200px;
             cursor: pointer;
-        }
-        .toggle-switch.active {
-            background: #3b6eff;
-        }
-        .toggle-switch .slider {
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
             transition: 0.2s;
         }
-        .toggle-switch.active .slider {
-            left: 22px;
+        .forum-category:hover { background: rgba(255,255,255,0.1); }
+        .forum-category h3 { color: white; }
+        .forum-category p { color: #aaa; font-size: 0.8rem; }
+
+        .forum-topics {
+            margin-top: 1rem;
         }
-        .danger-btn {
-            background: rgba(255,70,70,0.2);
-            border: 1px solid rgba(255,100,100,0.4);
-            color: #ffb7b7;
-            padding: 0.5rem;
-            border-radius: 2rem;
+        .forum-topic {
+            background: rgba(0,0,0,0.2);
+            padding: 0.8rem 1rem;
+            border-radius: 0.8rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
-            width: 100%;
+        }
+        .forum-topic:hover { background: rgba(255,255,255,0.05); }
+        .forum-topic .title { color: white; font-weight: 500; }
+        .forum-topic .meta { color: #aaa; font-size: 0.7rem; }
+
+        /* ============ МАЙН СЕРВЕР ============ */
+        .minecraft-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 1rem;
             text-align: center;
-            margin-top: 0.5rem;
         }
-        .danger-btn:hover {
-            background: rgba(255,70,70,0.4);
+        .stat-card .value {
+            font-size: 2rem;
+            color: #ffd700;
+            font-weight: bold;
         }
-        .admin-btn {
-            background: rgba(255,193,7,0.2);
-            border: 1px solid rgba(255,193,7,0.4);
-            color: #ffc107;
-        }
-        .admin-btn:hover {
-            background: rgba(255,193,7,0.4);
+        .stat-card .label {
+            color: #aaa;
+            font-size: 0.8rem;
         }
 
-        @media (max-width: 700px) {
-            .chats-sidebar {
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-                z-index: 20;
-                background: #1e1e2e;
-            }
-            .chats-sidebar.open {
-                transform: translateX(0);
-            }
-            .contact-info, .contact-preview, .user-info, .sidebar-tab span { display: inline; }
-            .message { max-width: 85%; }
-            .back-button { display: block; }
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
         }
-        .back-button {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
+        .player-item {
+            background: rgba(0,0,0,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .player-item .rank { font-weight: bold; }
+        .player-item .name { color: white; }
+
+        /* Адаптив */
+        @media (max-width: 768px) {
+            .sidebar-nav { width: 80px; }
+            .sidebar-nav .brand { font-size: 0; }
+            .sidebar-nav .brand::before { content: "⚡"; font-size: 2rem; }
+            .nav-item span { display: none; }
+            .nav-item i { font-size: 1.4rem; }
+            .chat-layout { flex-direction: column; }
+            .contact-list { width: 100%; max-height: 200px; }
+            .layer-content { padding: 0.5rem; }
+            .forum-categories { flex-direction: column; }
         }
     </style>
 </head>
@@ -738,759 +351,447 @@
     <div class="rgb-orb orb2"></div>
     <div class="rgb-orb orb3"></div>
 
-    <div id="appRoot"></div>
+    <div class="app-wrapper" id="appWrapper">
+        <!-- Боковая навигация -->
+        <nav class="sidebar-nav" id="sidebarNav">
+            <div class="brand">⚡ Nexus Flux</div>
+            <div class="nav-item active" data-layer="social"><i class="fas fa-comment"></i><span> Соц. сеть</span></div>
+            <div class="nav-item" data-layer="forum"><i class="fas fa-comments"></i><span> Форум</span></div>
+            <div class="nav-item" data-layer="minecraft"><i class="fas fa-cube"></i><span> Майн сервер</span></div>
+            <div style="flex:1;"></div>
+            <div class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span> Выйти</span></div>
+        </nav>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        <!-- Контент -->
+        <div class="content-area" id="contentArea">
+            <!-- Сюда будет динамически загружаться контент -->
+        </div>
+    </div>
 
-        // ========== FIREBASE CONFIG (ЗАМЕНИТЕ НА СВОЙ) ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1N2kfAHyYbB5-e_FN-6Is00YuaZdIhyo",
-            authDomain: "nexus-flux-22800.firebaseapp.com",
-            projectId: "nexus-flux-22800",
-            storageBucket: "nexus-flux-22800.firebasestorage.app",
-            messagingSenderId: "969830291215",
-            appId: "1:969830291215:web:167da7248ccc43a8d9d07a",
-            measurementId: "G-LVQRZK9SYQ"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const googleProvider = new GoogleAuthProvider();
-        const githubProvider = new GithubAuthProvider();
+    <script>
+        // ======================== ДАННЫЕ (localStorage) ========================
+        // Пользователи
+        let users = JSON.parse(localStorage.getItem('nf_users') || '[]');
+        let currentUser = JSON.parse(localStorage.getItem('nf_currentUser') || 'null');
 
-        // ========== ДАННЫЕ ПРИЛОЖЕНИЯ (без демо-пользователей) ==========
-        let users = [];
-        let messages = [];
-        let currentUser = null;
-        let currentConversation = null;
-        let activeTab = 'chats';
-        let pollingInterval = null;
-        let soundEnabled = true;
-        let notificationsEnabled = true;
+        // Сообщения (соцсеть)
+        let messages = JSON.parse(localStorage.getItem('nf_messages') || '[]');
 
-        const channels = [
-            { id: 'general', name: '# general', icon: 'fa-globe' },
-            { id: 'tech', name: '# tech', icon: 'fa-code' },
-            { id: 'random', name: '# random', icon: 'fa-music' }
-        ];
+        // Форум: категории, темы, посты
+        let forumData = JSON.parse(localStorage.getItem('nf_forum') || JSON.stringify({
+            categories: [
+                { id: 1, name: 'Общий', desc: 'Всё подряд' },
+                { id: 2, name: 'Помощь', desc: 'Технические вопросы' },
+                { id: 3, name: 'Предложения', desc: 'Идеи для платформы' }
+            ],
+            topics: [
+                { id: 1, categoryId: 1, title: 'Добро пожаловать!', author: 'admin', posts: [{ author: 'admin', text: 'Приветствуем на форуме!', date: Date.now() }] }
+            ]
+        }));
 
-        const STORAGE_USERS = 'nexus_flux_users';
-        const STORAGE_MESSAGES = 'nexus_flux_messages';
-        const STORAGE_CURRENT_USER = 'nexus_flux_currentUser';
-        const STORAGE_SETTINGS = 'nexus_flux_settings';
+        // Майн сервер – данные (имитация)
+        let minecraftData = JSON.parse(localStorage.getItem('nf_minecraft') || JSON.stringify({
+            online: 12,
+            maxPlayers: 50,
+            tps: 19.8,
+            players: [
+                { name: 'Steve', rank: 'Владелец', color: '#ffaa00' },
+                { name: 'Alex', rank: 'Админ', color: '#ff5555' },
+                { name: 'DarkSoul', rank: 'Модератор', color: '#55ff55' },
+                { name: 'MinerPro', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'BuilderMax', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'CreeperKing', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'RedstoneGuru', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'Survivor123', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'HunterX', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'FarmerJoe', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'Architect', rank: 'Игрок', color: '#aaaaff' },
+                { name: 'PvPChampion', rank: 'Игрок', color: '#aaaaff' }
+            ]
+        }));
 
-        function loadSettings() {
-            const settings = localStorage.getItem(STORAGE_SETTINGS);
-            if (settings) {
-                const s = JSON.parse(settings);
-                soundEnabled = s.sound !== undefined ? s.sound : true;
-                notificationsEnabled = s.notifications !== undefined ? s.notifications : true;
+        // Сохранение
+        function saveAll() {
+            localStorage.setItem('nf_users', JSON.stringify(users));
+            localStorage.setItem('nf_currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('nf_messages', JSON.stringify(messages));
+            localStorage.setItem('nf_forum', JSON.stringify(forumData));
+            localStorage.setItem('nf_minecraft', JSON.stringify(minecraftData));
+        }
+
+        // ======================== РЕНДЕР КОНТЕНТА ========================
+        function renderLayer(layer) {
+            const container = document.getElementById('contentArea');
+            if (!container) return;
+
+            // Если пользователь не залогинен — показываем экран входа
+            if (!currentUser && layer !== 'login') {
+                return renderLogin(container);
             }
-        }
-        function saveSettings() {
-            localStorage.setItem(STORAGE_SETTINGS, JSON.stringify({ sound: soundEnabled, notifications: notificationsEnabled }));
-        }
 
-        function loadData() {
-            const storedUsers = localStorage.getItem(STORAGE_USERS);
-            if (storedUsers) {
-                users = JSON.parse(storedUsers);
-            } else {
-                users = []; // пустой список, без демо-пользователей
-                saveUsers();
-            }
-            const storedMessages = localStorage.getItem(STORAGE_MESSAGES);
-            if (storedMessages) {
-                messages = JSON.parse(storedMessages);
-                messages.forEach(msg => {
-                    if (msg.likedBy === undefined) msg.likedBy = [];
-                    if (msg.likes === undefined) msg.likes = 0;
-                    if (msg.edited === undefined) msg.edited = false;
-                    if (msg.reactions === undefined) msg.reactions = {};
-                });
-                saveMessages();
-            } else {
-                messages = []; // пустые сообщения
-                saveMessages();
-            }
-            const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
-            if (savedUser) currentUser = JSON.parse(savedUser);
-            else currentUser = null;
-        }
-
-        function saveUsers() { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
-        function saveMessages() { localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages)); }
-        function saveCurrentUser() {
-            if (currentUser) localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
-            else localStorage.removeItem(STORAGE_CURRENT_USER);
-        }
-
-        function isUsernameUnique(username) {
-            return !users.some(u => u.username.toLowerCase() === username.toLowerCase());
-        }
-
-        function generateUniqueUsername(base) {
-            let username = base;
-            let counter = 1;
-            while (!isUsernameUnique(username)) {
-                username = base + '_' + counter;
-                counter++;
-            }
-            return username;
-        }
-
-        function createLocalUser(username, email, displayName, avatarUrl, firebaseUid, isAdmin = false) {
-            if (!username || username.trim() === '') return false;
-            let finalUsername = username.trim();
-            if (!isUsernameUnique(finalUsername)) {
-                finalUsername = generateUniqueUsername(finalUsername);
-            }
-            const newUser = {
-                username: finalUsername,
-                email,
-                displayName: displayName || finalUsername,
-                avatarUrl: avatarUrl || null,
-                bio: '',
-                firebaseUid,
-                settings: { notifications: true, sound: true },
-                isAdmin: isAdmin || (email === "mr.danielus1358@gmail.com")
-            };
-            users.push(newUser);
-            saveUsers();
-            currentUser = newUser;
-            saveCurrentUser();
-            renderApp();
-            return true;
-        }
-
-        async function handleSocialLogin(firebaseUser) {
-            let existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
-            if (existingUser) {
-                currentUser = existingUser;
-                saveCurrentUser();
-                renderApp();
-                return;
-            }
-            existingUser = users.find(u => u.email === firebaseUser.email);
-            if (existingUser) {
-                existingUser.firebaseUid = firebaseUser.uid;
-                saveUsers();
-                currentUser = existingUser;
-                saveCurrentUser();
-                renderApp();
-                return;
-            }
-            let baseUsername = firebaseUser.displayName ? firebaseUser.displayName.replace(/\s/g, '_') : firebaseUser.email.split('@')[0];
-            createLocalUser(baseUsername, firebaseUser.email, firebaseUser.displayName, firebaseUser.photoURL, firebaseUser.uid);
-        }
-
-        async function firebaseGoogleLogin() {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                await handleSocialLogin(result.user);
-            } catch (err) {
-                alert("Google login failed: " + err.message);
+            switch (layer) {
+                case 'social': return renderSocial(container);
+                case 'forum': return renderForum(container);
+                case 'minecraft': return renderMinecraft(container);
+                default: container.innerHTML = '<div style="color:white;padding:2rem;">Слой не найден</div>';
             }
         }
 
-        async function firebaseGithubLogin() {
-            try {
-                const result = await signInWithPopup(auth, githubProvider);
-                await handleSocialLogin(result.user);
-            } catch (err) {
-                alert("GitHub login failed: " + err.message);
-            }
-        }
-
-        async function registerWithEmail(email, username, password) {
-            if (!email || !username || !password) {
-                alert("Fill all fields");
-                return;
-            }
-            if (!isUsernameUnique(username)) {
-                alert("Username already taken");
-                return;
-            }
-            try {
-                const cred = await createUserWithEmailAndPassword(auth, email, password);
-                const firebaseUser = cred.user;
-                await updateProfile(firebaseUser, { displayName: username });
-                createLocalUser(username, email, username, null, firebaseUser.uid, email === "mr.danielus1358@gmail.com");
-            } catch (err) {
-                alert("Registration error: " + err.message);
-            }
-        }
-
-        async function loginWithEmail(email, password) {
-            if (!email || !password) {
-                alert("Enter email and password");
-                return;
-            }
-            try {
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                const firebaseUser = cred.user;
-                let existingUser = users.find(u => u.firebaseUid === firebaseUser.uid);
-                if (existingUser) {
-                    currentUser = existingUser;
-                    saveCurrentUser();
-                    renderApp();
+        // ==================== ВХОД / РЕГИСТРАЦИЯ ====================
+        function renderLogin(container) {
+            container.innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:100%;">
+                    <div style="background:rgba(0,0,0,0.5); padding:2rem; border-radius:2rem; width:100%; max-width:400px; text-align:center;">
+                        <h2 style="color:white;">Вход в Nexus Flux</h2>
+                        <input id="loginEmail" class="chat-input" style="width:100%; margin:0.5rem 0;" placeholder="Email">
+                        <input id="loginPassword" type="password" class="chat-input" style="width:100%; margin:0.5rem 0;" placeholder="Пароль">
+                        <button id="loginBtn" class="chat-send" style="width:100%; margin:0.5rem 0;">Войти</button>
+                        <p style="color:#aaa;font-size:0.8rem;">Нет аккаунта? <span id="toRegister" style="color:#3b6eff;cursor:pointer;">Регистрация</span></p>
+                        <div id="loginMessage" style="color:#ff8888;margin-top:0.5rem;"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('loginBtn').onclick = () => {
+                const email = document.getElementById('loginEmail').value;
+                const pass = document.getElementById('loginPassword').value;
+                const found = users.find(u => u.email === email && u.password === pass);
+                if (found) {
+                    currentUser = found;
+                    saveAll();
+                    renderLayer('social');
                 } else {
-                    const username = firebaseUser.displayName || email.split('@')[0];
-                    createLocalUser(username, email, username, firebaseUser.photoURL, firebaseUser.uid, email === "mr.danielus1358@gmail.com");
+                    document.getElementById('loginMessage').innerText = 'Неверный email или пароль';
                 }
-            } catch (err) {
-                alert("Login error: " + err.message);
-            }
-        }
-
-        function logout() {
-            auth.signOut();
-            if (pollingInterval) clearInterval(pollingInterval);
-            currentUser = null;
-            saveCurrentUser();
-            renderApp();
-        }
-
-        async function deleteAccount() {
-            if (!confirm("⚠️ Delete your account permanently? All messages will be lost.")) return;
-            try {
-                const user = auth.currentUser;
-                if (user) await deleteUser(user);
-            } catch (err) {
-                console.warn("Firebase delete error:", err);
-            }
-            users = users.filter(u => u.username !== currentUser.username);
-            messages = messages.filter(m => m.sender !== currentUser.username);
-            saveUsers();
-            saveMessages();
-            currentUser = null;
-            saveCurrentUser();
-            renderApp();
-        }
-
-        function sendMessage(text, imageBase64 = null) {
-            if (!text.trim() && !imageBase64) return;
-            let finalText = text.trim();
-            if (imageBase64) {
-                finalText += (finalText ? '\n' : '') + `[Image](${imageBase64})`;
-            }
-            const newMsg = {
-                id: Date.now(),
-                type: currentConversation.type,
-                target: currentConversation.id,
-                sender: currentUser.username,
-                text: finalText,
-                timestamp: new Date().toISOString(),
-                likes: 0,
-                likedBy: [],
-                edited: false,
-                reactions: {}
             };
-            messages.push(newMsg);
-            saveMessages();
-            playSound();
-            renderCurrentChat();
-            renderSidebar();
-            triggerStorageEvent();
+            document.getElementById('toRegister').onclick = () => renderRegister(container);
         }
 
-        function playSound() {
-            if (soundEnabled) {
-                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-                audio.volume = 0.3;
-                audio.play().catch(e => console.log("Audio play failed"));
-            }
-        }
-
-        function triggerStorageEvent() {
-            localStorage.setItem('__sync', Date.now().toString());
-            localStorage.removeItem('__sync');
-        }
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === STORAGE_MESSAGES || e.key === STORAGE_USERS || e.key === '__sync') {
-                loadData();
-                if (currentConversation) renderCurrentChat();
-                renderSidebar();
-            }
-        });
-
-        function deleteMessage(msgId) {
-            const index = messages.findIndex(m => m.id === msgId);
-            if (index !== -1 && messages[index].sender === currentUser.username) {
-                messages.splice(index, 1);
-                saveMessages();
-                renderCurrentChat();
-                renderSidebar();
-                triggerStorageEvent();
-            }
-        }
-
-        function editMessage(msgId, newText) {
-            const msg = messages.find(m => m.id === msgId);
-            if (msg && msg.sender === currentUser.username && newText.trim()) {
-                msg.text = newText.trim();
-                msg.edited = true;
-                saveMessages();
-                renderCurrentChat();
-                triggerStorageEvent();
-            }
-        }
-
-        function toggleLike(msgId) {
-            const msg = messages.find(m => m.id === msgId);
-            if (!msg) return;
-            if (!msg.likedBy) msg.likedBy = [];
-            const userId = currentUser.username;
-            if (msg.likedBy.includes(userId)) {
-                msg.likedBy = msg.likedBy.filter(u => u !== userId);
-                msg.likes--;
-            } else {
-                msg.likedBy.push(userId);
-                msg.likes++;
-            }
-            saveMessages();
-            renderCurrentChat();
-            triggerStorageEvent();
-        }
-
-        function addReaction(msgId, reaction) {
-            const msg = messages.find(m => m.id === msgId);
-            if (!msg) return;
-            if (!msg.reactions) msg.reactions = {};
-            const userId = currentUser.username;
-            if (msg.reactions[reaction] && msg.reactions[reaction].includes(userId)) {
-                msg.reactions[reaction] = msg.reactions[reaction].filter(u => u !== userId);
-                if (msg.reactions[reaction].length === 0) delete msg.reactions[reaction];
-            } else {
-                if (!msg.reactions[reaction]) msg.reactions[reaction] = [];
-                msg.reactions[reaction].push(userId);
-            }
-            saveMessages();
-            renderCurrentChat();
-            triggerStorageEvent();
-        }
-
-        function getMessagesForConversation(type, target) {
-            return messages.filter(m => m.type === type && m.target === target)
-                .sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
-        }
-
-        function renderCurrentChat() {
-            const chatArea = document.getElementById('chatAreaDynamic');
-            if (!chatArea) return;
-            if (!currentConversation) {
-                chatArea.innerHTML = '<div class="empty-messages">✨ Select a chat to start messaging</div>';
-                return;
-            }
-            const msgs = getMessagesForConversation(currentConversation.type, currentConversation.id);
-            let messagesHtml = '';
-            if (msgs.length === 0) messagesHtml = '<div class="empty-messages">💬 No messages yet. Be the first!</div>';
-            else {
-                msgs.forEach(msg => {
-                    const isOwn = msg.sender === currentUser.username;
-                    const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    const likedClass = (msg.likedBy && msg.likedBy.includes(currentUser.username)) ? 'active' : '';
-                    let displayText = msg.text;
-                    const imageMatch = msg.text.match(/\[Image\]\((data:image\/[^;]+;base64,[^)]+)\)/);
-                    let imageHtml = '';
-                    if (imageMatch) {
-                        imageHtml = `<br><img src="${imageMatch[1]}" style="max-width:200px; max-height:200px; border-radius:10px; margin-top:5px;">`;
-                        displayText = displayText.replace(/\[Image\]\([^)]+\)/, '');
-                    }
-                    let reactionsHtml = '';
-                    if (msg.reactions) {
-                        for (const [emoji, usersArr] of Object.entries(msg.reactions)) {
-                            const active = usersArr.includes(currentUser.username);
-                            reactionsHtml += `<button class="reaction-btn ${active ? 'active' : ''}" data-reaction="${emoji}" data-msg-id="${msg.id}">${emoji} ${usersArr.length}</button>`;
-                        }
-                    }
-                    messagesHtml += `
-                        <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
-                            <div class="message-bubble">
-                                ${escapeHtml(displayText)}${imageHtml}${msg.edited ? ' <i style="font-size:0.7rem;">(edited)</i>' : ''}
-                                <div class="message-actions">
-                                    ${isOwn ? `<button class="edit-msg" data-id="${msg.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                    ${isOwn ? `<button class="delete-msg" data-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
-                                    <button class="like-msg" data-id="${msg.id}"><i class="fas fa-heart ${likedClass}"></i> ${msg.likes || 0}</button>
-                                </div>
-                            </div>
-                            <div class="message-meta">
-                                <span>${escapeHtml(msg.sender)}</span>
-                                <span>${time}</span>
-                                <div class="message-reactions">${reactionsHtml}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            let headerTitle = '';
-            if (currentConversation.type === 'channel') {
-                const ch = channels.find(c => c.id === currentConversation.id);
-                headerTitle = ch ? ch.name : currentConversation.id;
-            } else {
-                headerTitle = '@' + currentConversation.id;
-            }
-            chatArea.innerHTML = `
-                <div class="chat-header">
-                    <button class="back-button" id="backBtn"><i class="fas fa-arrow-left"></i></button>
-                    <div class="chat-avatar">${currentConversation.type === 'channel' ? '#' : currentConversation.id.charAt(0).toUpperCase()}</div>
-                    <div class="chat-info"><h3>${escapeHtml(headerTitle)}</h3></div>
-                </div>
-                <div class="messages-container" id="messagesContainer">${messagesHtml}</div>
-                <div class="message-input-area">
-                    <textarea id="messageInput" class="message-input" placeholder="Type a message..."></textarea>
-                    <button id="attachImageBtn" class="attach-btn"><i class="fas fa-image"></i></button>
-                    <button id="sendMsgBtn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            `;
-            const input = document.getElementById('messageInput');
-            const sendBtn = document.getElementById('sendMsgBtn');
-            const backBtn = document.getElementById('backBtn');
-            const attachBtn = document.getElementById('attachImageBtn');
-            if (input && sendBtn) {
-                const send = () => { if(input.value.trim()) sendMessage(input.value); input.value = ''; };
-                sendBtn.onclick = send;
-                input.onkeypress = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
-            }
-            if (attachBtn) {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = 'image/*';
-                attachBtn.onclick = () => fileInput.click();
-                fileInput.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            sendMessage('', ev.target.result);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                };
-            }
-            if (backBtn) backBtn.onclick = () => { currentConversation = null; renderCurrentChat(); renderSidebar(); };
-            const container = document.getElementById('messagesContainer');
-            if (container) container.scrollTop = container.scrollHeight;
-
-            container?.addEventListener('click', (e) => {
-                const deleteBtn = e.target.closest('.delete-msg');
-                const editBtn = e.target.closest('.edit-msg');
-                const likeBtn = e.target.closest('.like-msg');
-                const reactionBtn = e.target.closest('.reaction-btn');
-                if (deleteBtn) {
-                    const id = parseInt(deleteBtn.getAttribute('data-id'));
-                    if (id) deleteMessage(id);
-                }
-                if (editBtn) {
-                    const id = parseInt(editBtn.getAttribute('data-id'));
-                    if (id) {
-                        const newText = prompt('Edit message:', messages.find(m => m.id === id)?.text);
-                        if (newText) editMessage(id, newText);
-                    }
-                }
-                if (likeBtn) {
-                    const id = parseInt(likeBtn.getAttribute('data-id'));
-                    if (id) toggleLike(id);
-                }
-                if (reactionBtn) {
-                    const id = parseInt(reactionBtn.getAttribute('data-msg-id'));
-                    const reaction = reactionBtn.getAttribute('data-reaction');
-                    if (id && reaction) addReaction(id, reaction);
-                }
-            });
-        }
-
-        function renderSidebar() {
-            const sidebar = document.getElementById('sidebarDynamic');
-            if (!sidebar) return;
-
-            let mainContent = '';
-            if (activeTab === 'chats') {
-                const otherUsers = users.filter(u => u.username !== currentUser.username);
-                let contactsHtml = '';
-                otherUsers.forEach(u => {
-                    const lastMsg = messages.filter(m => (m.type === 'dm' && (m.target === u.username || (m.sender === u.username && m.target === currentUser.username))))
-                        .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-                    const preview = lastMsg ? (lastMsg.sender === currentUser.username ? 'You: ' : '') + lastMsg.text.substring(0,30) : 'New conversation';
-                    const activeClass = (currentConversation && currentConversation.type === 'dm' && currentConversation.id === u.username) ? 'active' : '';
-                    contactsHtml += `
-                        <div class="contact-item ${activeClass}" data-type="dm" data-id="${u.username}">
-                            <div class="contact-avatar" style="background-image: url('${u.avatarUrl || ''}'); background-size: cover;">${!u.avatarUrl ? u.username.charAt(0).toUpperCase() : ''}</div>
-                            <div class="contact-info">
-                                <div class="contact-name">${escapeHtml(u.displayName || u.username)}</div>
-                                <div class="contact-preview">${escapeHtml(preview)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                mainContent = `<div class="contacts-list" id="contactsList">${contactsHtml}</div>`;
-            } else if (activeTab === 'channels') {
-                let channelsHtml = '';
-                channels.forEach(ch => {
-                    const lastMsg = messages.filter(m => m.type === 'channel' && m.target === ch.id).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-                    const preview = lastMsg ? lastMsg.text.substring(0,30) : 'No messages yet';
-                    const activeClass = (currentConversation && currentConversation.type === 'channel' && currentConversation.id === ch.id) ? 'active' : '';
-                    channelsHtml += `
-                        <div class="contact-item ${activeClass}" data-type="channel" data-id="${ch.id}">
-                            <div class="contact-avatar" style="background:#3b6eff;">#</div>
-                            <div class="contact-info">
-                                <div class="contact-name">${ch.name}</div>
-                                <div class="contact-preview">${escapeHtml(preview)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                mainContent = `<div class="contacts-list">${channelsHtml}</div>`;
-            } else {
-                mainContent = `<div class="empty-messages" style="text-align:center; padding:1rem;">👥 Groups coming soon</div>`;
-            }
-
-            sidebar.innerHTML = `
-                <div class="user-header">
-                    <button class="burger-menu" id="burgerMenuBtn"><i class="fas fa-bars"></i></button>
-                    <div class="avatar" style="background-image: url('${currentUser.avatarUrl || ''}'); background-size: cover;">${!currentUser.avatarUrl ? currentUser.username.charAt(0).toUpperCase() : ''}</div>
-                    <div class="user-info">
-                        <div class="username">@${currentUser.username}</div>
+        function renderRegister(container) {
+            container.innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:100%;">
+                    <div style="background:rgba(0,0,0,0.5); padding:2rem; border-radius:2rem; width:100%; max-width:400px; text-align:center;">
+                        <h2 style="color:white;">Регистрация</h2>
+                        <input id="regUsername" class="chat-input" style="width:100%; margin:0.5rem 0;" placeholder="Имя пользователя">
+                        <input id="regEmail" class="chat-input" style="width:100%; margin:0.5rem 0;" placeholder="Email">
+                        <input id="regPassword" type="password" class="chat-input" style="width:100%; margin:0.5rem 0;" placeholder="Пароль">
+                        <button id="registerBtn" class="chat-send" style="width:100%; margin:0.5rem 0;">Зарегистрироваться</button>
+                        <p style="color:#aaa;font-size:0.8rem;">Уже есть аккаунт? <span id="toLogin" style="color:#3b6eff;cursor:pointer;">Войти</span></p>
+                        <div id="registerMessage" style="color:#ff8888;margin-top:0.5rem;"></div>
                     </div>
                 </div>
-                <div class="sidebar-tabs">
-                    <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" data-tab="chats"><i class="fas fa-comment"></i><span> Chats</span></button>
-                    <button class="sidebar-tab ${activeTab === 'channels' ? 'active' : ''}" data-tab="channels"><i class="fas fa-bullhorn"></i><span> Channels</span></button>
-                    <button class="sidebar-tab ${activeTab === 'groups' ? 'active' : ''}" data-tab="groups"><i class="fas fa-users"></i><span> Groups</span></button>
+            `;
+            document.getElementById('registerBtn').onclick = () => {
+                const username = document.getElementById('regUsername').value;
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                if (users.find(u => u.email === email)) {
+                    document.getElementById('registerMessage').innerText = 'Email уже занят';
+                    return;
+                }
+                const newUser = { username, email, password, avatar: null, bio: '' };
+                users.push(newUser);
+                currentUser = newUser;
+                saveAll();
+                renderLayer('social');
+            };
+            document.getElementById('toLogin').onclick = () => renderLogin(container);
+        }
+
+        // ==================== СОЦИАЛЬНАЯ СЕТЬ (мессенджер) ====================
+        function renderSocial(container) {
+            // Получаем список контактов (все пользователи кроме текущего)
+            const contacts = users.filter(u => u.username !== currentUser.username);
+            let contactsHtml = contacts.map(u => `
+                <div class="contact-item" data-contact="${u.username}">
+                    <div class="contact-avatar" style="background:linear-gradient(135deg,#ff9966,#ff5e62);">${u.username[0].toUpperCase()}</div>
+                    <div class="contact-info">
+                        <div class="contact-name">${u.username}</div>
+                        <div class="contact-preview">Нажмите для чата</div>
+                    </div>
                 </div>
-                <div class="search-box"><input type="text" class="search-input" id="searchInput" placeholder="Search..."></div>
-                ${mainContent}
+            `).join('');
+
+            container.innerHTML = `
+                <div class="layer-header">
+                    <h2>💬 Социальная сеть</h2>
+                    <p>Личные сообщения и каналы</p>
+                </div>
+                <div class="layer-content">
+                    <div class="chat-layout">
+                        <div class="contact-list" id="contactList">
+                            ${contactsHtml}
+                        </div>
+                        <div class="chat-window" id="chatWindow">
+                            <div class="chat-messages" id="chatMessages">
+                                <div style="color:#ddd;text-align:center;margin-top:2rem;">Выберите контакт для начала общения</div>
+                            </div>
+                            <div class="chat-input-area">
+                                <input class="chat-input" id="messageInput" placeholder="Сообщение...">
+                                <button class="chat-send" id="sendMessageBtn">Отправить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
 
-            document.querySelectorAll('.sidebar-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    activeTab = tab.getAttribute('data-tab');
-                    renderSidebar();
-                    if (currentConversation) renderCurrentChat();
-                });
-            });
+            // Обработка выбора контакта
+            let currentContact = null;
             document.querySelectorAll('.contact-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const type = el.getAttribute('data-type');
-                    const id = el.getAttribute('data-id');
-                    if (type && id) { currentConversation = { type, id }; renderCurrentChat(); renderSidebar(); }
+                el.addEventListener('click', function() {
+                    document.querySelectorAll('.contact-item').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentContact = this.dataset.contact;
+                    renderMessages(currentContact);
                 });
             });
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput && (activeTab === 'chats' || activeTab === 'channels')) {
-                searchInput.addEventListener('input', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    document.querySelectorAll('.contact-item').forEach(item => {
-                        const name = item.querySelector('.contact-name')?.innerText.toLowerCase() || '';
-                        item.style.display = name.includes(term) ? 'flex' : 'none';
-                    });
+
+            function renderMessages(contact) {
+                const msgContainer = document.getElementById('chatMessages');
+                const chatMessages = messages.filter(m =>
+                    (m.sender === currentUser.username && m.recipient === contact) ||
+                    (m.sender === contact && m.recipient === currentUser.username)
+                );
+                let html = chatMessages.map(m => `
+                    <div class="message-bubble ${m.sender === currentUser.username ? 'own' : ''}">
+                        <strong>${m.sender}</strong>: ${m.text}
+                        <span style="font-size:0.6rem;color:#aaa;display:block;">${new Date(m.timestamp).toLocaleString()}</span>
+                    </div>
+                `).join('');
+                if (!html) html = '<div style="color:#ddd;text-align:center;margin-top:2rem;">Нет сообщений. Напишите что-нибудь!</div>';
+                msgContainer.innerHTML = html;
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+
+            // Отправка сообщения
+            document.getElementById('sendMessageBtn').onclick = () => {
+                const input = document.getElementById('messageInput');
+                const text = input.value.trim();
+                if (!text || !currentContact) return;
+                const msg = {
+                    id: Date.now(),
+                    sender: currentUser.username,
+                    recipient: currentContact,
+                    text: text,
+                    timestamp: Date.now()
+                };
+                messages.push(msg);
+                saveAll();
+                input.value = '';
+                renderMessages(currentContact);
+            };
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('sendMessageBtn').click();
+            });
+        }
+
+        // ==================== ФОРУМ ====================
+        function renderForum(container) {
+            const categories = forumData.categories;
+            const topics = forumData.topics;
+
+            // Простая навигация по категориям
+            let catsHtml = categories.map(c => `
+                <div class="forum-category" data-catid="${c.id}">
+                    <h3>${c.name}</h3>
+                    <p>${c.desc}</p>
+                    <span style="color:#aaa;font-size:0.7rem;">Тем: ${topics.filter(t => t.categoryId === c.id).length}</span>
+                </div>
+            `).join('');
+
+            // Список всех тем (для простоты показываем все)
+            let topicsHtml = topics.map(t => {
+                const catName = categories.find(c => c.id === t.categoryId)?.name || 'Без категории';
+                return `
+                    <div class="forum-topic" data-topicid="${t.id}">
+                        <div>
+                            <div class="title">${t.title}</div>
+                            <div class="meta">${catName} • ${t.author} • ${new Date(t.posts[0]?.date || Date.now()).toLocaleDateString()}</div>
+                        </div>
+                        <div style="color:#aaa;font-size:0.8rem;">${t.posts.length} сообщений</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="layer-header">
+                    <h2>📝 Форум</h2>
+                    <p>Обсуждайте, задавайте вопросы, делитесь идеями</p>
+                </div>
+                <div class="layer-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <div>
+                            <button id="newTopicBtn" class="chat-send" style="padding:0.5rem 1.2rem;">+ Новая тема</button>
+                        </div>
+                    </div>
+                    <div class="forum-categories" id="forumCategories">${catsHtml}</div>
+                    <div class="forum-topics" id="forumTopics">${topicsHtml}</div>
+                </div>
+            `;
+
+            // Обработка клика по теме (просмотр постов)
+            document.querySelectorAll('.forum-topic').forEach(el => {
+                el.addEventListener('click', function() {
+                    const topicId = parseInt(this.dataset.topicid);
+                    showTopicPosts(topicId);
                 });
-            } else if (searchInput) {
-                searchInput.style.display = 'none';
-            }
+            });
 
-            const burgerBtn = document.getElementById('burgerMenuBtn');
-            if (burgerBtn) {
-                burgerBtn.onclick = () => {
-                    const sidebarEl = document.querySelector('.chats-sidebar');
-                    if (sidebarEl) sidebarEl.classList.toggle('open');
-                };
-            }
-        }
-
-        function showSettingsModal() {
-            const modalDiv = document.createElement('div');
-            modalDiv.className = 'settings-modal';
-            modalDiv.innerHTML = `
-                <div class="settings-content">
-                    <div class="settings-header">
-                        <h2>Settings</h2>
-                        <button class="close-settings"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="settings-section">
-                        <div class="settings-section-title">Preferences</div>
-                        <div class="settings-item">
-                            <div class="settings-item-info"><h4>Sound</h4><p>Play sound for new messages</p></div>
-                            <div class="toggle-switch ${soundEnabled ? 'active' : ''}" id="soundToggle"><div class="slider"></div></div>
-                        </div>
-                        <div class="settings-item">
-                            <div class="settings-item-info"><h4>Notifications</h4><p>Show browser notifications</p></div>
-                            <div class="toggle-switch ${notificationsEnabled ? 'active' : ''}" id="notifToggle"><div class="slider"></div></div>
-                        </div>
-                    </div>
-                    <div class="settings-section">
-                        <div class="settings-section-title">Account</div>
-                        <button id="deleteAccountBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Delete Account</button>
-                        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
-                    </div>
-                    ${currentUser.isAdmin ? `
-                    <div class="settings-section">
-                        <div class="settings-section-title">Admin Panel</div>
-                        <button id="clearMessagesBtn" class="danger-btn admin-btn"><i class="fas fa-database"></i> Clear All Messages</button>
-                    </div>
-                    ` : ''}
-                    <div class="settings-section">
-                        <div class="settings-section-title">About</div>
-                        <div class="settings-item-info"><p>Nexus Flux v1.0 | Telegram‑style messenger</p></div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modalDiv);
-            modalDiv.querySelector('.close-settings').onclick = () => modalDiv.remove();
-            const soundToggle = modalDiv.querySelector('#soundToggle');
-            const notifToggle = modalDiv.querySelector('#notifToggle');
-            soundToggle.onclick = () => {
-                const active = soundToggle.classList.toggle('active');
-                soundEnabled = active;
-                saveSettings();
-            };
-            notifToggle.onclick = () => {
-                const active = notifToggle.classList.toggle('active');
-                notificationsEnabled = active;
-                saveSettings();
-                if (notificationsEnabled && Notification.permission === 'default') Notification.requestPermission();
-            };
-            modalDiv.querySelector('#deleteAccountBtn').onclick = () => { modalDiv.remove(); deleteAccount(); };
-            modalDiv.querySelector('#logoutBtn').onclick = () => { modalDiv.remove(); logout(); };
-            if (currentUser.isAdmin) {
-                modalDiv.querySelector('#clearMessagesBtn').onclick = () => {
-                    if (confirm('Delete ALL messages for all users?')) {
-                        messages = [];
-                        saveMessages();
-                        modalDiv.remove();
-                        renderCurrentChat();
-                        renderSidebar();
-                        triggerStorageEvent();
-                    }
-                };
-            }
-        }
-
-        function startPolling() {
-            if (pollingInterval) clearInterval(pollingInterval);
-            pollingInterval = setInterval(() => {
-                if (currentConversation) {
-                    renderCurrentChat();
+            // Создание новой темы
+            document.getElementById('newTopicBtn').onclick = () => {
+                const title = prompt('Название темы:');
+                if (!title) return;
+                const categoryId = prompt('ID категории (1-Общий, 2-Помощь, 3-Предложения):');
+                const catId = parseInt(categoryId);
+                if (!forumData.categories.find(c => c.id === catId)) {
+                    alert('Неверная категория');
+                    return;
                 }
-                renderSidebar();
-            }, 2000);
-        }
+                const newTopic = {
+                    id: Date.now(),
+                    categoryId: catId,
+                    title: title,
+                    author: currentUser.username,
+                    posts: [{ author: currentUser.username, text: 'Начало темы', date: Date.now() }]
+                };
+                forumData.topics.push(newTopic);
+                saveAll();
+                renderForum(container);
+            };
 
-        function renderMessenger() {
-            return `<div class="messenger-container"><div class="chats-sidebar" id="sidebarDynamic"></div><div class="chat-area" id="chatAreaDynamic"></div></div>`;
-        }
+            // Функция просмотра темы (в модальном окне)
+            function showTopicPosts(topicId) {
+                const topic = forumData.topics.find(t => t.id === topicId);
+                if (!topic) return;
+                const postsHtml = topic.posts.map(p => `
+                    <div style="background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.5rem;">
+                        <strong style="color:#ffd700;">${p.author}</strong>
+                        <span style="color:#aaa;font-size:0.7rem;margin-left:1rem;">${new Date(p.date).toLocaleString()}</span>
+                        <div style="color:white;margin-top:0.3rem;">${p.text}</div>
+                    </div>
+                `).join('');
 
-        function renderAuthScreen() {
-            let mode = 'login';
-            function switchMode() {
-                mode = mode === 'login' ? 'register' : 'login';
-                renderAuthScreen();
+                // Простое модальное окно
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position:fixed; top:0; left:0; width:100%; height:100%;
+                    background:rgba(0,0,0,0.8); backdrop-filter:blur(8px);
+                    display:flex; align-items:center; justify-content:center; z-index:999;
+                `;
+                modal.innerHTML = `
+                    <div style="background:#1e1e2e; padding:2rem; border-radius:2rem; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
+                        <h2 style="color:white;">${topic.title}</h2>
+                        <p style="color:#aaa;">Автор: ${topic.author}</p>
+                        <div style="margin:1rem 0;">${postsHtml}</div>
+                        <textarea id="replyText" style="width:100%; padding:0.5rem; border-radius:1rem; background:rgba(0,0,0,0.5); color:white; border:1px solid #555;" placeholder="Ваш ответ..."></textarea>
+                        <button id="replyBtn" class="chat-send" style="margin-top:0.5rem;">Ответить</button>
+                        <button id="closeModalBtn" class="chat-send" style="margin-top:0.5rem; background:#555;">Закрыть</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                document.getElementById('replyBtn').onclick = () => {
+                    const text = document.getElementById('replyText').value.trim();
+                    if (!text) return;
+                    topic.posts.push({ author: currentUser.username, text, date: Date.now() });
+                    saveAll();
+                    modal.remove();
+                    showTopicPosts(topicId); // обновить
+                };
+                document.getElementById('closeModalBtn').onclick = () => modal.remove();
             }
-            const isLogin = mode === 'login';
-            return `
-                <div class="glass-stage">
-                    <div class="rgb-border-wrap">
-                        <div class="glass-card">
-                            <div class="symbolic-icon">✦</div>
-                            <h1>Nexus Flux</h1>
-                            <div class="sub">${isLogin ? 'Sign in to continue' : 'Create new account'}</div>
-                            <div class="gradient-divider"></div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" id="authEmail" class="form-input" placeholder="your@email.com">
-                            </div>
-                            ${!isLogin ? `<div class="form-group"><label>Username</label><input type="text" id="authUsername" class="form-input" placeholder="Username"></div>` : ''}
-                            <div class="form-group">
-                                <label>Password</label>
-                                <input type="password" id="authPassword" class="form-input" placeholder="Password">
-                            </div>
-                            <button id="authSubmitBtn" class="btn-primary">${isLogin ? 'Log In' : 'Register'}</button>
-                            <div class="auth-switch">
-                                ${isLogin ? "Don't have an account? " : "Already have an account? "}
-                                <span id="authSwitchBtn">${isLogin ? 'Register' : 'Log in'}</span>
-                            </div>
-                            <div class="gradient-divider" style="margin: 1rem auto;"></div>
-                            <div class="social-buttons">
-                                <div id="googleLoginBtn" class="social-btn"><i class="fab fa-google"></i> Google</div>
-                                <div id="githubLoginBtn" class="social-btn"><i class="fab fa-github"></i> GitHub</div>
-                            </div>
-                            <div class="rgb-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        }
+
+        // ==================== МАЙН СЕРВЕР ====================
+        function renderMinecraft(container) {
+            const data = minecraftData;
+            const online = data.players.length;
+            const max = data.maxPlayers || 50;
+
+            container.innerHTML = `
+                <div class="layer-header">
+                    <h2>⛏️ Minecraft сервер</h2>
+                    <p>RealWorld • SkyDev • Fantime — копия в реальном времени</p>
+                </div>
+                <div class="layer-content">
+                    <div class="minecraft-stats">
+                        <div class="stat-card">
+                            <div class="value">${online}</div>
+                            <div class="label">Онлайн</div>
                         </div>
+                        <div class="stat-card">
+                            <div class="value">${max}</div>
+                            <div class="label">Максимум</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${data.tps || 20}</div>
+                            <div class="label">TPS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${Math.round(online/max*100)}%</div>
+                            <div class="label">Загрузка</div>
+                        </div>
+                    </div>
+                    <div style="color:white; margin-bottom:1rem;">Игроки онлайн:</div>
+                    <div class="player-list" id="playerList">
+                        ${data.players.map(p => `
+                            <div class="player-item">
+                                <span class="rank" style="color:${p.color || '#aaa'};">[${p.rank}]</span>
+                                <span class="name">${p.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top:2rem; color:#aaa; font-size:0.8rem; text-align:center;">
+                        <i class="fas fa-sync-alt"></i> Данные обновляются автоматически
+                        <button id="refreshMinecraft" class="chat-send" style="padding:0.2rem 1rem; margin-left:1rem;">Обновить</button>
                     </div>
                 </div>
             `;
+
+            document.getElementById('refreshMinecraft').onclick = () => {
+                // Имитация обновления – добавляем случайного игрока
+                const names = ['HeroBrine', 'Notch', 'Jeb', 'Dinnerbone', 'Grumm', 'Steve', 'Alex'];
+                const ranks = ['Игрок', 'Модератор', 'Админ', 'Владелец'];
+                const newPlayer = {
+                    name: names[Math.floor(Math.random() * names.length)] + Math.floor(Math.random() * 100),
+                    rank: ranks[Math.floor(Math.random() * ranks.length)],
+                    color: ['#ffaa00','#ff5555','#55ff55','#aaaaff'][Math.floor(Math.random()*4)]
+                };
+                minecraftData.players.push(newPlayer);
+                saveAll();
+                renderMinecraft(container);
+            };
         }
 
-        function attachAuthEvents() {
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const switchBtn = document.getElementById('authSwitchBtn');
-            const googleBtn = document.getElementById('googleLoginBtn');
-            const githubBtn = document.getElementById('githubLoginBtn');
-            if (submitBtn) {
-                submitBtn.onclick = () => {
-                    const email = document.getElementById('authEmail').value;
-                    const password = document.getElementById('authPassword').value;
-                    const isLogin = submitBtn.innerText === 'Log In';
-                    if (isLogin) {
-                        loginWithEmail(email, password);
-                    } else {
-                        const username = document.getElementById('authUsername').value;
-                        registerWithEmail(email, username, password);
-                    }
-                };
-            }
-            if (switchBtn) {
-                switchBtn.onclick = () => {
-                    const isLogin = submitBtn.innerText === 'Log In';
-                    if (isLogin) {
-                        document.querySelector('.sub').innerText = 'Create new account';
-                        submitBtn.innerText = 'Register';
-                        switchBtn.innerText = 'Log in';
-                        const formGroup = document.createElement('div');
-                        formGroup.className = 'form-group';
-                        formGroup.innerHTML = '<label>Username</label><input type="text" id="authUsername" class="form-input" placeholder="Username">';
-                        document.getElementById('authEmail').parentNode.insertAdjacentElement('afterend', formGroup);
-                    } else {
-                        document.querySelector('.sub').innerText = 'Sign in to continue';
-                        submitBtn.innerText = 'Log In';
-                        switchBtn.innerText = 'Register';
-                        const usernameField = document.getElementById('authUsername')?.parentNode;
-                        if (usernameField) usernameField.remove();
-                    }
-                };
-            }
-            if (googleBtn) googleBtn.onclick = firebaseGoogleLogin;
-            if (githubBtn) githubBtn.onclick = firebaseGithubLogin;
+        // ==================== НАВИГАЦИЯ ====================
+        function initNavigation() {
+            const navItems = document.querySelectorAll('.nav-item[data-layer]');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                    this.classList.add('active');
+                    const layer = this.dataset.layer;
+                    renderLayer(layer);
+                });
+            });
+
+            // Выход
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                currentUser = null;
+                saveAll();
+                renderLayer('login');
+            });
         }
 
-        function renderApp() {
-            const appDiv = document.getElementById('appRoot');
+        // ==================== СТАРТ ====================
+        window.onload = function() {
+            // Проверяем, есть ли пользователь
             if (!currentUser) {
-                if (pollingInterval) clearInterval(pollingInterval);
-                appDiv.innerHTML = renderAuthScreen();
-                attachAuthEvents();
+                renderLayer('login');
             } else {
-                appDiv.innerHTML = renderMessenger();
-                renderSidebar();
-                if (!currentConversation) {
-                    currentConversation = { type: 'channel', id: 'general' };
-                    renderCurrentChat();
-                    renderSidebar();
-                } else renderCurrentChat();
-                startPolling();
+                renderLayer('social');
             }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
-        }
-
-        loadSettings();
-        loadData();
-        renderApp();
+            initNavigation();
+        };
     </script>
 </body>
 </html>
