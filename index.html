@@ -370,14 +370,11 @@
 
     <script>
         // ======================== ДАННЫЕ (localStorage) ========================
-        // Пользователи
         let users = JSON.parse(localStorage.getItem('nf_users') || '[]');
         let currentUser = JSON.parse(localStorage.getItem('nf_currentUser') || 'null');
 
-        // Сообщения (соцсеть)
         let messages = JSON.parse(localStorage.getItem('nf_messages') || '[]');
 
-        // Форум: категории, темы, посты
         let forumData = JSON.parse(localStorage.getItem('nf_forum') || JSON.stringify({
             categories: [
                 { id: 1, name: 'Общий', desc: 'Всё подряд' },
@@ -389,7 +386,6 @@
             ]
         }));
 
-        // Майн сервер – данные (имитация)
         let minecraftData = JSON.parse(localStorage.getItem('nf_minecraft') || JSON.stringify({
             online: 12,
             maxPlayers: 50,
@@ -410,7 +406,6 @@
             ]
         }));
 
-        // Сохранение
         function saveAll() {
             localStorage.setItem('nf_users', JSON.stringify(users));
             localStorage.setItem('nf_currentUser', JSON.stringify(currentUser));
@@ -424,15 +419,17 @@
             const container = document.getElementById('contentArea');
             if (!container) return;
 
-            // Если пользователь не залогинен — показываем экран входа
+            // Если пользователь не залогинен, показываем вход, кроме случая, когда это сам логин (чтобы не зациклить)
             if (!currentUser && layer !== 'login') {
-                return renderLogin(container);
+                renderLogin(container);
+                return;
             }
 
             switch (layer) {
                 case 'social': return renderSocial(container);
                 case 'forum': return renderForum(container);
                 case 'minecraft': return renderMinecraft(container);
+                case 'login': return renderLogin(container);
                 default: container.innerHTML = '<div style="color:white;padding:2rem;">Слой не найден</div>';
             }
         }
@@ -497,9 +494,8 @@
             document.getElementById('toLogin').onclick = () => renderLogin(container);
         }
 
-        // ==================== СОЦИАЛЬНАЯ СЕТЬ (мессенджер) ====================
+        // ==================== СОЦИАЛЬНАЯ СЕТЬ ====================
         function renderSocial(container) {
-            // Получаем список контактов (все пользователи кроме текущего)
             const contacts = users.filter(u => u.username !== currentUser.username);
             let contactsHtml = contacts.map(u => `
                 <div class="contact-item" data-contact="${u.username}">
@@ -534,7 +530,6 @@
                 </div>
             `;
 
-            // Обработка выбора контакта
             let currentContact = null;
             document.querySelectorAll('.contact-item').forEach(el => {
                 el.addEventListener('click', function() {
@@ -562,7 +557,6 @@
                 msgContainer.scrollTop = msgContainer.scrollHeight;
             }
 
-            // Отправка сообщения
             document.getElementById('sendMessageBtn').onclick = () => {
                 const input = document.getElementById('messageInput');
                 const text = input.value.trim();
@@ -589,7 +583,6 @@
             const categories = forumData.categories;
             const topics = forumData.topics;
 
-            // Простая навигация по категориям
             let catsHtml = categories.map(c => `
                 <div class="forum-category" data-catid="${c.id}">
                     <h3>${c.name}</h3>
@@ -598,7 +591,6 @@
                 </div>
             `).join('');
 
-            // Список всех тем (для простоты показываем все)
             let topicsHtml = topics.map(t => {
                 const catName = categories.find(c => c.id === t.categoryId)?.name || 'Без категории';
                 return `
@@ -628,7 +620,6 @@
                 </div>
             `;
 
-            // Обработка клика по теме (просмотр постов)
             document.querySelectorAll('.forum-topic').forEach(el => {
                 el.addEventListener('click', function() {
                     const topicId = parseInt(this.dataset.topicid);
@@ -636,7 +627,6 @@
                 });
             });
 
-            // Создание новой темы
             document.getElementById('newTopicBtn').onclick = () => {
                 const title = prompt('Название темы:');
                 if (!title) return;
@@ -658,7 +648,6 @@
                 renderForum(container);
             };
 
-            // Функция просмотра темы (в модальном окне)
             function showTopicPosts(topicId) {
                 const topic = forumData.topics.find(t => t.id === topicId);
                 if (!topic) return;
@@ -670,7 +659,6 @@
                     </div>
                 `).join('');
 
-                // Простое модальное окно
                 const modal = document.createElement('div');
                 modal.style.cssText = `
                     position:fixed; top:0; left:0; width:100%; height:100%;
@@ -695,7 +683,7 @@
                     topic.posts.push({ author: currentUser.username, text, date: Date.now() });
                     saveAll();
                     modal.remove();
-                    showTopicPosts(topicId); // обновить
+                    showTopicPosts(topicId);
                 };
                 document.getElementById('closeModalBtn').onclick = () => modal.remove();
             }
@@ -748,7 +736,6 @@
             `;
 
             document.getElementById('refreshMinecraft').onclick = () => {
-                // Имитация обновления – добавляем случайного игрока
                 const names = ['HeroBrine', 'Notch', 'Jeb', 'Dinnerbone', 'Grumm', 'Steve', 'Alex'];
                 const ranks = ['Игрок', 'Модератор', 'Админ', 'Владелец'];
                 const newPlayer = {
@@ -774,21 +761,24 @@
                 });
             });
 
-            // Выход
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 currentUser = null;
                 saveAll();
+                // Убираем активный класс со всех nav-item
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 renderLayer('login');
             });
         }
 
         // ==================== СТАРТ ====================
         window.onload = function() {
-            // Проверяем, есть ли пользователь
-            if (!currentUser) {
-                renderLayer('login');
-            } else {
+            // Если есть сохранённый пользователь, загружаем соцсеть, иначе логин
+            if (currentUser) {
                 renderLayer('social');
+                // Активируем соответствующий пункт меню
+                document.querySelector('.nav-item[data-layer="social"]')?.classList.add('active');
+            } else {
+                renderLayer('login');
             }
             initNavigation();
         };
